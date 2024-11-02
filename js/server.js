@@ -1,7 +1,21 @@
+/**
+ * DISCLAIMER: This code was developed with assistance from ChatGPT by OpenAI.
+ * Certain portions, including structure and functionality, were suggested or reviewed by ChatGPT.
+ * Please review and test the code thoroughly to ensure it meets your requirements and security standards.
+ */
+
 const http = require("http");
 const url = require("url");
 const mysql = require("mysql");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const jwtSecret = crypto.randomBytes(64).toString("hex");
+console.log(jwtSecret); // This will print a secure, random JWT secret
 
+// Configuration
+const JWT_SECRET = "6c9fc76260e6d150380000d7ef8cf956401e90a6ec1e8bc0ac7843dcb57ec8679605796967a8266a98de78f2e815c80a1a16888f74ec381685b89eb5dac4485e";
+
+// Database Connection
 class Database {
   constructor(config) {
     this.connection = mysql.createConnection(config);
@@ -27,18 +41,15 @@ class Database {
       if (err) throw err;
       console.log("Users table ready!");
 
-      // Check if table is empty and insert admin user if needed
       const checkEmptyQuery = "SELECT COUNT(*) AS count FROM Users";
       this.connection.query(checkEmptyQuery, (err, result) => {
         if (err) throw err;
-
-        const isEmpty = result[0].count === 0;
-        if (isEmpty) {
+        if (result[0].count === 0) {
           const insertAdminQuery =
             "INSERT INTO Users (email, password) VALUES (?, ?)";
           this.connection.query(
             insertAdminQuery,
-            ["admin@admin.com", "111"],
+            ["admin@admin.com", hashPassword("111")],
             (err) => {
               if (err) throw err;
               console.log("Admin user added to Users table.");
@@ -57,32 +68,149 @@ class Database {
   }
 }
 
+// Helper function for password hashing
+function hashPassword(password) {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
+
+// User service for managing user-related database operations
 class UserService {
   constructor(database) {
     this.database = database;
   }
 
   registerUser(email, password, callback) {
+    const hashedPassword = hashPassword(password);
     const query = "INSERT INTO Users (email, password) VALUES (?, ?)";
-    this.database.executeQuery(query, [email, password], callback);
+    this.database.executeQuery(query, [email, hashedPassword], callback);
   }
 
-  getUserById(userId, callback) {
-    const query = "SELECT * FROM Users WHERE id = ?";
-    this.database.executeQuery(query, [userId], callback);
-  }
-
-  updateUser(userId, email, password, callback) {
-    const query = "UPDATE Users SET email = ?, password = ? WHERE id = ?";
-    this.database.executeQuery(query, [email, password, userId], callback);
-  }
-
-  deleteUser(userId, callback) {
-    const query = "DELETE FROM Users WHERE id = ?";
-    this.database.executeQuery(query, [userId], callback);
+  getUserByEmail(email, callback) {
+    const query = "SELECT * FROM Users WHERE email = ?";
+    this.database.executeQuery(query, [email], callback);
   }
 }
 
+// Authentication service for handling JWT creation and verification
+class AuthService {
+  constructor(userService) {
+    this.userService = userService;
+  }
+
+  loginUser(email, password, callback) {
+    this.userService.getUserByEmail(email, (err, user) => {
+      if (err || !user || hashPassword(password) !== user.password) {
+        callback(new Error("Invalid credentials"), null);
+        return;
+      }
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      callback(null, token);
+    });
+  }
+
+  verifyToken(token, callback) {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+      if (err) {
+        callback(new Error("Invalid or expired token"), null);
+      } else {
+        callback(null, decoded);
+      }
+    });
+  }
+}
+
+// Server with routes and middleware for handling requests
+class Server {
+  constructor(port, authService) {
+    this.port = port;
+    this.authService = authService;
+  }
+
+  start() {
+    const server = http.createServer((req, res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
+
+      if (req.method === "OPTIONS") {
+        res.writeHead(204);
+        res.end();
+        return;
+      }
+
+      const parsedUrl = url.parse(req.url, true);
+      const method = req.method;
+
+      if (method === "POST" && parsedUrl.pathname === "/login") {
+        this.handleLogin(req, res);
+      } else if (method === "GET" && parsedUrl.pathname === "/protected") {
+        this.handleProtectedRoute(req, res);
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Route not found" }));
+      }
+    });
+
+    server.listen(this.port, () => {
+      console.log(`Server running on port ${this.port}`);
+    });
+  }
+
+  handleLogin(req, res) {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const { email, password } = JSON.parse(body);
+      this.authService.loginUser(email, password, (err, token) => {
+        if (err) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid credentials" }));
+        } else {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ token }));
+        }
+      });
+    });
+  }
+
+  handleProtectedRoute(req, res) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Authorization header missing" }));
+      return;
+    }
+
+    const token = authHeader.split(" ")[1];
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid or expired token" }));
+      } else {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            message: "Access granted to protected route",
+            user: decoded,
+          })
+        );
+      }
+    });
+  }
+}
+
+// Configuration and initialization
 const dbConfig = {
   host: "localhost",
   user: "arickorc_aric",
@@ -95,93 +223,7 @@ db.connect();
 db.createUsersTable();
 
 const userService = new UserService(db);
+const authService = new AuthService(userService);
+const server = new Server(8080, authService);
 
-const server = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
-
-  const parsedUrl = url.parse(req.url, true);
-  const method = req.method;
-
-  if (method === "POST" && parsedUrl.pathname === "/register") {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on("end", () => {
-      const { email, password } = JSON.parse(body);
-      userService.registerUser(email, password, (err, result) => {
-        if (err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err.message }));
-        } else {
-          res.writeHead(201, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              success: "User registered successfully!",
-              userId: result.insertId,
-            })
-          );
-        }
-      });
-    });
-  } else if (method === "GET" && parsedUrl.pathname === "/user") {
-    const userId = parsedUrl.query.id;
-    userService.getUserById(userId, (err, result) => {
-      if (err || result.length === 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "User not found" }));
-      } else {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(result[0]));
-      }
-    });
-  } else if (method === "PUT" && parsedUrl.pathname === "/user") {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on("end", () => {
-      const { id, email, password } = JSON.parse(body);
-      userService.updateUser(id, email, password, (err, result) => {
-        if (err || result.affectedRows === 0) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Update failed or user not found" }));
-        } else {
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: "User updated successfully" }));
-        }
-      });
-    });
-  } else if (method === "DELETE" && parsedUrl.pathname === "/user") {
-    const userId = parsedUrl.query.id;
-    userService.deleteUser(userId, (err, result) => {
-      if (err || result.affectedRows === 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "User not found or deletion failed" }));
-      } else {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: "User deleted successfully" }));
-      }
-    });
-  } else {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Route not found" }));
-  }
-});
-
-server.listen(8080, () => {
-  console.log("Server running on port 8080");
-});
+server.start();
