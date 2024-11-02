@@ -13,7 +13,8 @@ const jwtSecret = crypto.randomBytes(64).toString("hex");
 console.log(jwtSecret); // This will print a secure, random JWT secret
 
 // Configuration
-const JWT_SECRET = "6c9fc76260e6d150380000d7ef8cf956401e90a6ec1e8bc0ac7843dcb57ec8679605796967a8266a98de78f2e815c80a1a16888f74ec381685b89eb5dac4485e";
+const JWT_SECRET =
+  "6c9fc76260e6d150380000d7ef8cf956401e90a6ec1e8bc0ac7843dcb57ec8679605796967a8266a98de78f2e815c80a1a16888f74ec381685b89eb5dac4485e";
 
 // Database Connection
 class Database {
@@ -29,7 +30,8 @@ class Database {
   }
 
   createUsersTable() {
-    const createQuery = `
+    // Query to create the Users table if it doesn't exist
+    const createUsersQuery = `
       CREATE TABLE IF NOT EXISTS Users (
         id INT(11) AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(150) UNIQUE NOT NULL,
@@ -37,13 +39,15 @@ class Database {
       ) ENGINE=MyISAM;
     `;
 
-    this.connection.query(createQuery, (err) => {
+    this.connection.query(createUsersQuery, (err) => {
       if (err) throw err;
       console.log("Users table ready!");
 
+      // Check if table is empty and insert admin user if needed
       const checkEmptyQuery = "SELECT COUNT(*) AS count FROM Users";
       this.connection.query(checkEmptyQuery, (err, result) => {
         if (err) throw err;
+
         if (result[0].count === 0) {
           const insertAdminQuery =
             "INSERT INTO Users (email, password) VALUES (?, ?)";
@@ -57,13 +61,27 @@ class Database {
           );
         }
       });
+
+      // Now create the SecurityQuestions table with a foreign key to Users table
+      this.createSecurityQuestionsTable();
     });
   }
 
-  executeQuery(query, values, callback) {
-    this.connection.query(query, values, (err, result) => {
-      if (err) callback(err, null);
-      else callback(null, result);
+  createSecurityQuestionsTable() {
+    // Query to create the SecurityQuestions table if it doesn't exist
+    const createSecurityQuestionsQuery = `
+      CREATE TABLE IF NOT EXISTS SecurityQuestions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        question VARCHAR(150) NOT NULL,
+        answer VARCHAR(150) NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+      ) ENGINE=MyISAM;
+    `;
+
+    this.connection.query(createSecurityQuestionsQuery, (err) => {
+      if (err) throw err;
+      console.log("SecurityQuestions table ready!");
     });
   }
 }
