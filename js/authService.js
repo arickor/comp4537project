@@ -1,8 +1,6 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Utils = require('./utils');
-const jwtSecret = crypto.randomBytes(64).toString('hex');
-console.log(jwtSecret); // This will print a secure, random JWT secret
 
 // Configuration
 const JWT_SECRET =
