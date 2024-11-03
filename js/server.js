@@ -25,7 +25,17 @@ class Database {
   connect() {
     this.connection.connect((err) => {
       if (err) throw err;
-      console.log("Connected to database!");
+      console.log('Connected to database!');
+    });
+  }
+
+  executeQuery(query, params, callback) {
+    this.connection.query(query, params, (err, results) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        callback(null, results);
+      }
     });
   }
 
@@ -104,8 +114,18 @@ class UserService {
   }
 
   getUserByEmail(email, callback) {
-    const query = "SELECT * FROM Users WHERE email = ?";
-    this.database.executeQuery(query, [email], callback);
+    const query = 'SELECT * FROM Users WHERE email = ?';
+    this.database.executeQuery(query, [email], (err, results) => {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+      if (results.length > 0) {
+        callback(null, results[0]);
+      } else {
+        callback(null, null);
+      }
+    });
   }
 }
 
