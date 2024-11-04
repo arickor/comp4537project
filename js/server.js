@@ -54,7 +54,9 @@ class Server {
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/admin/users')) {
         this.handleGetNonAdminUsers(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/increment-api-count')) {
-        this.handleApiCount(req, res);
+        this.handleIncrementApiCount(req, res);
+      } else if (method === 'GET' && parsedUrl.pathname.endsWith('/get-api-count')) {
+        this.handleGetApiCount(req, res);
       } else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Route not found.' }));
@@ -206,7 +208,7 @@ class Server {
     });
   }
 
-  handleApiCount(req, res) {
+  handleIncrementApiCount(req, res) {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk.toString();
@@ -214,19 +216,61 @@ class Server {
 
     req.on('end', () => {
       const { email } = JSON.parse(body);
-
-      this.userService.incrementApiCount(email, (err, result) => {
+      this.userService.incrementApiCount(email, (err) => {
         if (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Error incrementing API count' }));
-          throw err;
+          return;
         }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'API count incremented' }));
+        res.end(
+          JSON.stringify({
+            message: 'API count incremented',
+          })
+        );
+      });
+    });
+  }
+
+  handleGetApiCount(req, res) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Authorization header missing' }));
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid or expired token' }));
+        return;
+      }
+
+      const email = decoded.email;
+      this.userService.getApiCount(email, (err, apiCount) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to retrieve API count' }));
+          return;
+        }
+
+        // Check if API count is over the limit
+        const MAX_API_CALLS = 20;
+        let warning = null;
+        if (apiCount > MAX_API_CALLS) {
+          warning = 'You have exceeded the limit of 20 free API calls.';
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ apiCount, warning }));
       });
     });
   }
 }
+
 
 // Configuration and initialization
 const dbConfig = {

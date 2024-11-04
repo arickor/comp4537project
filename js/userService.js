@@ -124,6 +124,17 @@ class UserService {
   //   });
   // }
 
+  getApiCount(email, callback) {
+    const query = 'SELECT api_count FROM Users WHERE email = ?';
+    this.database.executeQuery(query, [email], (err, results) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        callback(null, results[0]?.api_count || 0);
+      }
+    });
+  }
+
   incrementApiCount(email, callback) {
     const incrementQuery =
       'UPDATE Users SET api_count = api_count + 1 WHERE email = ?';
