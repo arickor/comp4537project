@@ -52,6 +52,17 @@ class UserService {
     });
   }
 
+  getAllUsers(callback) {
+    const query = 'SELECT id, email, api_count FROM Users';
+    this.database.executeQuery(query, [], (err, results) => {
+      if (err) {
+        callback(err, null);
+      } else {
+        callback(null, results);
+      }
+    });
+  }
+
   getSecurityQuestionByEmail(email, callback) {
     const query = `
       SELECT question FROM SecurityQuestions
@@ -110,19 +121,6 @@ class UserService {
       }
     });
   }
-
-  // getAllUsersExceptAdmin(callback) {
-  //   const query = 'SELECT * FROM Users WHERE email != ?';
-  //   const adminEmail = 'admin@admin.com';
-
-  //   this.database.executeQuery(query, [adminEmail], (err, results) => {
-  //     if (err) {
-  //       callback(err, null);
-  //     } else {
-  //       callback(null, results);
-  //     }
-  //   });
-  // }
 
   getApiCount(email, callback) {
     const query = 'SELECT api_count FROM Users WHERE email = ?';
