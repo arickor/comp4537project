@@ -50,9 +50,21 @@ class Database {
           this.connection.query(
             insertAdminQuery,
             ['admin@admin.com', Utils.hashPassword('111')],
-            (err) => {
+            (err, result) => {
               if (err) throw err;
               console.log('Admin user added to Users table.');
+
+              const userId = result.insertId;
+              const insertSecurityQuestionQuery =
+                'INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)';
+              this.connection.query(
+                insertSecurityQuestionQuery,
+                [userId, 'Answer is admin', 'admin'],
+                (err) => {
+                  if (err) throw err;
+                  console.log('Security question for admin user added.');
+                }
+              );
             }
           );
         }
