@@ -52,7 +52,7 @@ class Server {
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/protected')) {
         this.handleProtectedRoute(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/admin/users')) {
-        this.handleGetNonAdminUsers(req, res);
+        this.handleAdminRoute(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/increment-api-count')) {
         this.handleIncrementApiCount(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/get-api-count')) {
@@ -269,8 +269,37 @@ class Server {
       });
     });
   }
-}
 
+  handleAdminRoute(req, res) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Authorization header missing' }));
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err || decoded.email !== 'admin@admin.com') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        return;
+      }
+
+      this.userService.getAllUsers((err, results) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to fetch user data' }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ users: results }));
+      });
+    });
+  }
+}
 
 // Configuration and initialization
 const dbConfig = {
