@@ -51,6 +51,10 @@ class Server {
         this.handleResetPassword(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/protected')) {
         this.handleProtectedRoute(req, res);
+      } else if (method === 'GET' && parsedUrl.pathname.endsWith('/admin/users')) {
+        this.handleGetNonAdminUsers(req, res);
+      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/increment-api-count')) {
+        this.handleApiCount(req, res);
       } else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Route not found.' }));
@@ -199,6 +203,27 @@ class Server {
           })
         );
       }
+    });
+  }
+
+  handleApiCount(req, res) {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      const { email } = JSON.parse(body);
+
+      this.userService.incrementApiCount(email, (err, result) => {
+        if (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Error incrementing API count' }));
+          throw err;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'API count incremented' }));
+      });
     });
   }
 }

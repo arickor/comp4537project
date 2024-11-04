@@ -110,6 +110,25 @@ class UserService {
       }
     });
   }
+
+  // getAllUsersExceptAdmin(callback) {
+  //   const query = 'SELECT * FROM Users WHERE email != ?';
+  //   const adminEmail = 'admin@admin.com';
+
+  //   this.database.executeQuery(query, [adminEmail], (err, results) => {
+  //     if (err) {
+  //       callback(err, null);
+  //     } else {
+  //       callback(null, results);
+  //     }
+  //   });
+  // }
+
+  incrementApiCount(email, callback) {
+    const incrementQuery =
+      'UPDATE Users SET api_count = api_count + 1 WHERE email = ?';
+    this.database.executeQuery(incrementQuery, [email], callback);
+  }
 }
 
 module.exports = UserService;

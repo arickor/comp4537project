@@ -30,7 +30,8 @@ class Database {
       CREATE TABLE IF NOT EXISTS Users (
         id INT(11) AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(150) UNIQUE NOT NULL,
-        password VARCHAR(150) NOT NULL
+        password VARCHAR(150) NOT NULL,
+        api_count INT(11) DEFAULT 0
       ) ENGINE=MyISAM;
     `;
 
