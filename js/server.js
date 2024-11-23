@@ -76,13 +76,17 @@ class Server {
 
     req.on('end', () => {
       const { email, password } = JSON.parse(body);
-      this.authService.loginUser(email, password, (err, token) => {
+      this.authService.loginUser(email, password, (err, token, userId) => {
         if (err) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Invalid credentials.' }));
         } else {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ token }));
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Set-Cookie': `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
+          });
+          
+          res.end(JSON.stringify({ userId, email }));
         }
       });
     });
@@ -304,14 +308,16 @@ class Server {
 // Configuration and initialization
 const dbConfig = {
   host: 'localhost',
-  user: 'arickorc_aric',
-  password: 'P@$$w0rd12345',
+  user: 'root',
+  password: 'dhwjddms12',
   database: 'arickorc_comp4537project',
 };
 
 const db = new Database(dbConfig);
 db.connect();
 db.createUsersTable();
+db.createApiCallCountTable();
+db.createTotalApiCallsByEndPointAndMethod();
 
 const userService = new UserService(db);
 const authService = new AuthService(userService);
