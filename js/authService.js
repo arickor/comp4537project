@@ -21,7 +21,7 @@ class AuthService {
       const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
         expiresIn: '1h',
       });
-      callback(null, token);
+      callback(null, token, user.id);
     });
   }
 
