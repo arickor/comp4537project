@@ -75,6 +75,40 @@ class Database {
     });
   }
 
+  createApiCallCountTable() {
+    // Query to create the APICallCount table if it doesn't exist
+    const createAPICallCountQuery = `
+      CREATE TABLE IF NOT EXISTS APICallCount (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        api_count INT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+      ) ENGINE=MyISAM;
+    `;
+
+    this.connection.query(createAPICallCountQuery, (err) => {
+      if (err) throw err;
+      console.log('APICallCount table ready!');
+    });
+  }
+
+  createTotalApiCallsByEndPointAndMethod() {
+    // Query to create the TotalApiCallsByEndPoint table if it doesn't exist
+    const createTotalApiCallsByEndPointQuery = `
+      CREATE TABLE IF NOT EXISTS TotalApiCallsByEndPoint (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        endpoint VARCHAR(150) NOT NULL,
+        method VARCHAR(10) NOT NULL,
+        total_calls INT NOT NULL
+      ) ENGINE=MyISAM;
+    `;
+
+    this.connection.query(createTotalApiCallsByEndPointQuery, (err) => {
+      if (err) throw err;
+      console.log('TotalApiCallsByEndPoint table ready!');
+    });
+  }
+
   createSecurityQuestionsTable() {
     // Query to create the SecurityQuestions table if it doesn't exist
     const createSecurityQuestionsQuery = `
