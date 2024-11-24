@@ -33,9 +33,35 @@ class UserService {
           [userId, securityQuestion, answer],
           callback
         );
+
+        const setUserRoleQuery = 'INSERT INTO UserRoles (user_id, role) VALUES (?, ?)';
+        this.database.executeQuery(
+          setUserRoleQuery,
+          [userId, 'user'],
+          callback
+        );
       }
     );
   }
+
+  getUserRoleById(userId) {
+    return new Promise((resolve, reject) => {
+      const query = 'SELECT role FROM userRoles WHERE user_id = ?';
+      this.database.executeQuery(query, [userId], (err, results) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        if (results.length === 0) {
+          resolve('user'); 
+        } else {
+          resolve(results[0].role); 
+        }
+      });
+    });
+  }
+  
+  
 
   getUserByEmail(email, callback) {
     const query = 'SELECT * FROM Users WHERE email = ?';
@@ -53,9 +79,10 @@ class UserService {
   }
 
   getAllUsers(callback) {
-    const query = 'SELECT id, email, api_count FROM Users';
+    const query = 'SELECT id, email FROM Users';
     this.database.executeQuery(query, [], (err, results) => {
       if (err) {
+  
         callback(err, null);
       } else {
         callback(null, results);
