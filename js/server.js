@@ -64,6 +64,12 @@ class Server {
         this.handleProtectedRoute(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/admin/users')) {
         this.handleAdminRoute(req, res);
+      } else if (method === 'GET' && parsedUrl.pathname.endsWith('/color')) {
+        this.handleColorRoute(req, res);
+      } else if (method === 'PUT' && parsedUrl.pathname.endsWith('/edit-color')) {
+        this.handleEditColorRoute(req, res);
+      } else if (method === 'DELETE' && parsedUrl.pathname.endsWith('/delete-color')) {
+        this.handleDeleteColorRoute(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/increment-api-count')) {
         this.handleIncrementApiCount(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/get-api-count')) {
@@ -78,6 +84,8 @@ class Server {
       console.log(`Server running on port ${this.port}`);
     });
   }
+
+    
 
   handleLogin(req, res) {
     let body = '';
