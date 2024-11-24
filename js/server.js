@@ -30,7 +30,7 @@ class Server {
       res.setHeader('Access-Control-Allow-Origin', localHost);
       res.setHeader(
         'Access-Control-Allow-Methods',
-        'GET, POST, PUT, DELETE, OPTIONS',
+        'GET, POST, PUT, PATCH, DELETE, OPTIONS',
       );
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader(
@@ -42,7 +42,7 @@ class Server {
         res.writeHead(204, {
           'Access-Control-Allow-Origin': localHost,
           'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, credentials',
         });
         res.end();
@@ -70,6 +70,8 @@ class Server {
         this.handleAdminRoute(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/color')) {
         this.handleColorRoute(req, res);
+      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/add-color')) {
+        this.handleAddColorRoute(req, res);
       } else if (method === 'PATCH' && parsedUrl.pathname.endsWith('/edit-color')) {
         this.handleEditColorRoute(req, res);
       } else if (method === 'DELETE' && parsedUrl.pathname.endsWith('/delete-color')) {
@@ -103,87 +105,116 @@ class Server {
 
       const userId = decoded.id;
 
-      this.colorService.getEmotionAndColorByUserId(userId, (err, results) => {
-        if (err) {
+      this.colorService
+        .getEmotionAndColorByUserId(userId)
+        .then((results) => {
+          console.log(results);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ colors: results }));
+        })
+        .catch((error) => {
+          console.error('Error fetching color data:', error);
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
-          return;
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ colors: results }));
-      });
+        });
     });
   }
+
   handleEditColorRoute(req, res) {
-    const cookies = Utils.parseCookies(req);
-    const token = cookies.jwt;
-  
-    this.authService.verifyToken(token, (err, decoded) => {
-      if (err) {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
-        return;
-      }
-  
-      let body = '';
-      req.on('data', (chunk) => {
-        body += chunk.toString();
-      });
-  
-      req.on('end', () => {
-        const { emotion, color } = JSON.parse(body);
-        const userId = decoded.id; 
-  
-        this.colorService.editColorByUserIdAndEmotion(userId, emotion, color, (err, results) => {
-          if (err) {
+  const cookies = Utils.parseCookies(req);
+  const token = cookies.jwt;
+
+  this.authService.verifyToken(token, (err, decoded) => {
+    if (err) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized access' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+        console.log('body', body);
+        const { userId, emotion, color } = JSON.parse(body);
+        this.colorService
+          .editColorByUserIdAndEmotion(userId, emotion, color)
+          .then((results) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({ message: 'Color data updated successfully' })
+            );
+          })
+          .catch((err) => {
+            console.error('Error updating color:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Failed to edit color data' }));
-            return;
-          }
-  
+          });
+    });
+  });
+}
+
+
+  handleAddColorRoute(req, res) {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+      const { userId, emotion, color } = JSON.parse(body);
+      this.colorService
+        .addColorByUserIdAndEmotion(userId, emotion, color)
+        .then((results) => {
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Color data updated successfully' }));
+          res.end(JSON.stringify({ message: 'Color data added successfully' }));
+        })
+        .catch((err) => {
+          console.error('Error adding color:', err.message);
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
         });
-      });
     });
   }
   
 
-  handleDeleteColorRoute(req, res) {
-    const cookies = Utils.parseCookies(req);
-    const token = cookies.jwt;
-  
-    this.authService.verifyToken(token, (err, decoded) => {
-      if (err) {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
-        return;
-      }
-  
-      let body = '';
-      req.on('data', (chunk) => {
-        body += chunk.toString();
-      });
-  
-      req.on('end', () => {
-        const { emotion } = JSON.parse(body);
-        const userId = decoded.id; 
-  
-        this.colorService.deleteColorByUserIdAndEmotion(userId, emotion, (err, results) => {
-          if (err) {
+handleDeleteColorRoute(req, res) {
+  const cookies = Utils.parseCookies(req);
+  const token = cookies.jwt;
+
+  this.authService.verifyToken(token, (err, decoded) => {
+    if (err) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized access' }));
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on('end', () => {
+        const { userId, emotion } = JSON.parse(body);
+
+        this.colorService
+          .deleteColorByUserIdAndEmotion(userId, emotion)
+          .then((results) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(
+              JSON.stringify({ message: 'Color data deleted successfully' })
+            );
+          })
+          .catch((err) => {
+            console.error('Error deleting color:', err.message);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Failed to delete color data' }));
-            return;
-          }
-  
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Color data deleted successfully' }));
-        });
-      });
+          });
     });
-  }
-  
+  });
+}
 
   handleLogin(req, res) {
     let body = '';
@@ -194,7 +225,6 @@ class Server {
     req.on('end', async () => {
       try {
         const { email, password } = JSON.parse(body);
-  
         const { token, userId, userRole } = await this.authService.loginUser(email, password);
   
         res.writeHead(200, {
@@ -208,8 +238,6 @@ class Server {
       }
     });
   }
-  
-  
 
   logoutUser(req, res) {
     res.writeHead(200, {
@@ -305,7 +333,7 @@ class Server {
 const dbConfig = {
   host: 'localhost',
   user: 'root',
-  password: 'dhwjddms12',
+  password: '12',
   database: 'arickorc_comp4537project',
 };
 
@@ -315,7 +343,7 @@ db.createUsersTable();
 db.createApiCallCountTable();
 db.createTotalApiCallsByEndPointAndMethod();
 db.createUserRolesTable();
-
+db.createColorTableByUserIdAndEmotion();
 
 // Seed user and admin data
 const seed = new SeedData(db);

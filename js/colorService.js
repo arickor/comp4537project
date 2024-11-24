@@ -45,6 +45,31 @@ class ColorService {
             });
         });
     }
+
+    addColorByUserIdAndEmotion(userId, emotion, color) {
+        return new Promise((resolve, reject) => {
+            const checkQuery = 'SELECT * FROM ColorByUserIdAndEmotion WHERE user_id = ? AND emotion = ?';
+            this.database.executeQuery(checkQuery, [userId, emotion], (err, results) => {
+                if (err) {
+                    reject(new Error('Database error occurred.'));
+                    return;
+                }
+                if (results.length > 0) {
+                    reject(new Error('A color data for this emotion alreay exists!'));
+                    return;
+                }
+
+                const query = 'INSERT INTO ColorByUserIdAndEmotion (user_id, emotion, color) VALUES (?, ?, ?)';
+                this.database.executeQuery(query, [userId, emotion, color], (err, results) => {
+                    if (err) {
+                        reject(new Error('Failed to insert color data.'));
+                        return;
+                    }
+                    resolve(results);
+                });
+            });
+        });
+    }
 }
 
 module.exports = ColorService;
