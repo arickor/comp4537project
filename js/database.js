@@ -112,10 +112,10 @@ class Database {
     // Query to create the Color table if it doesn't exist
     const createColorTableQuery = `
       CREATE TABLE IF NOT EXISTS ColorByUserIdAndEmotion (
-        id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         emotion VARCHAR(20) NOT NULL,
         color VARCHAR(20) NOT NULL,
+        PRIMARY KEY (user_id, emotion),
         FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
       ) ENGINE=MyISAM;
     `;
