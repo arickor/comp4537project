@@ -9,6 +9,8 @@ const url = require('url');
 const Database = require('./database');
 const UserService = require('./userService');
 const AuthService = require('./authService');
+const SeedData = require('./seed');
+const Utils = require('./utils');
 
 // Server with routes and middleware for handling requests
 class Server {
@@ -20,18 +22,25 @@ class Server {
 
   start() {
     const server = http.createServer((req, res) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      const localHost = 'http://localhost:3000';
+      res.setHeader('Access-Control-Allow-Origin', localHost);
       res.setHeader(
         'Access-Control-Allow-Methods',
-        'GET, POST, PUT, DELETE, OPTIONS'
+        'GET, POST, PUT, DELETE, OPTIONS',
       );
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader(
         'Access-Control-Allow-Headers',
-        'Content-Type, Authorization'
+        'Content-Type, Authorization, credentials',
       );
 
       if (req.method === 'OPTIONS') {
-        res.writeHead(204);
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin': localHost,
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, credentials',
+        });
         res.end();
         return;
       }
@@ -41,6 +50,8 @@ class Server {
 
       if (method === 'POST' && parsedUrl.pathname.endsWith('/login')) {
         this.handleLogin(req, res);
+      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/logout')) {
+        this.logoutUser(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/register')) {
         this.handleRegister(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/get-security-question')) {
@@ -73,23 +84,33 @@ class Server {
     req.on('data', (chunk) => {
       body += chunk.toString();
     });
-
-    req.on('end', () => {
-      const { email, password } = JSON.parse(body);
-      this.authService.loginUser(email, password, (err, token, userId) => {
-        if (err) {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Invalid credentials.' }));
-        } else {
-          res.writeHead(200, {
-            'Content-Type': 'application/json',
-            'Set-Cookie': `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
-          });
-          
-          res.end(JSON.stringify({ userId, email }));
-        }
-      });
+  
+    req.on('end', async () => {
+      try {
+        const { email, password } = JSON.parse(body);
+  
+        const { token, userId, userRole } = await this.authService.loginUser(email, password);
+  
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Set-Cookie': `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
+        });
+        res.end(JSON.stringify({ userId, email, userRole }));
+      } catch (err) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
     });
+  }
+  
+  
+
+  logoutUser(req, res) {
+    res.writeHead(200, {
+      'Set-Cookie': 'jwt=; HttpOnly; Secure; Path=/; Max-Age=0',
+      'Content-Type': 'application/json',
+    });
+    res.end(JSON.stringify({ message: 'Successfully logged out' }));
   }
 
   handleRegister(req, res) {
@@ -122,6 +143,13 @@ class Server {
     });
   }
 
+  //
+  handleGetApiCount(req, res) {
+    const result = 1;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ result }));
+  }
+
   handleGetSecurityQuestion(req, res) {
     let body = '';
     req.on('data', (chunk) => {
@@ -142,150 +170,12 @@ class Server {
     });
   }
 
-  handleVerifySecurityAnswer(req, res) {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      const { email, answer } = JSON.parse(body);
-      this.userService.getSecurityAnswerByEmail(email, (err, storedAnswer) => {
-        if (err || !storedAnswer) {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({ error: 'User not found or answer not set.' })
-          );
-        } else if (storedAnswer.toLowerCase() !== answer.toLowerCase()) {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Please enter a correct answer.' }));
-        } else {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Answer verified successfully.' }));
-        }
-      });
-    });
-  }
-
-  handleResetPassword(req, res) {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      const { email, newPassword } = JSON.parse(body);
-      this.userService.resetPassword(email, newPassword, (err, success) => {
-        if (err || !success) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Password reset failed.' }));
-        } else {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Password reset successful.' }));
-        }
-      });
-    });
-  }
-
-  handleProtectedRoute(req, res) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Authorization header missing' }));
-      return;
-    }
-
-    const token = authHeader.split(' ')[1];
-    this.authService.verifyToken(token, (err, decoded) => {
-      if (err) {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid or expired token' }));
-      } else {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            message: 'Access granted to protected route',
-            user: decoded,
-          })
-        );
-      }
-    });
-  }
-
-  handleIncrementApiCount(req, res) {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      const { email } = JSON.parse(body);
-      this.userService.incrementApiCount(email, (err) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Error incrementing API count' }));
-          return;
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({
-            message: 'API count incremented',
-          })
-        );
-      });
-    });
-  }
-
-  handleGetApiCount(req, res) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Authorization header missing' }));
-      return;
-    }
-
-    const token = authHeader.split(' ')[1];
-    this.authService.verifyToken(token, (err, decoded) => {
-      if (err) {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid or expired token' }));
-        return;
-      }
-
-      const email = decoded.email;
-      this.userService.getApiCount(email, (err, apiCount) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to retrieve API count' }));
-          return;
-        }
-
-        // Check if API count is over the limit
-        const MAX_API_CALLS = 20;
-        let warning = null;
-        if (apiCount > MAX_API_CALLS) {
-          warning = 'You have exceeded the limit of 20 free API calls.';
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ apiCount, warning }));
-      });
-    });
-  }
-
   handleAdminRoute(req, res) {
-    const authHeader = req.headers.authorization;
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
 
-    if (!authHeader) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Authorization header missing' }));
-      return;
-    }
-
-    const token = authHeader.split(' ')[1];
     this.authService.verifyToken(token, (err, decoded) => {
-      if (err || decoded.email !== 'admin@admin.com') {
+      if (err || decoded.userRole !== 'admin') {
         res.writeHead(403, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
@@ -318,6 +208,13 @@ db.connect();
 db.createUsersTable();
 db.createApiCallCountTable();
 db.createTotalApiCallsByEndPointAndMethod();
+db.createUserRolesTable();
+
+
+// Seed user and admin data
+const seed = new SeedData(db);
+seed.seedUser();
+seed.seedAdmin();
 
 const userService = new UserService(db);
 const authService = new AuthService(userService);
