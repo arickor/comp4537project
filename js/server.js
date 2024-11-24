@@ -115,48 +115,75 @@ class Server {
       });
     });
   }
-
   handleEditColorRoute(req, res) {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      const { userId, emotion, color } = JSON.parse(body);
-      this.colorService.editColorByUserIdAndEmotion(userId, emotion, color, (err, results) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to edit color data' }));
-          return;
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Color data updated successfully' }));
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+  
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        return;
+      }
+  
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk.toString();
+      });
+  
+      req.on('end', () => {
+        const { emotion, color } = JSON.parse(body);
+        const userId = decoded.id; 
+  
+        this.colorService.editColorByUserIdAndEmotion(userId, emotion, color, (err, results) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to edit color data' }));
+            return;
+          }
+  
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Color data updated successfully' }));
+        });
       });
     });
   }
+  
 
   handleDeleteColorRoute(req, res) {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
-      const { userId, emotion } = JSON.parse(body);
-      this.colorService.deleteColorByUserIdAndEmotion(userId, emotion, (err, results) => {
-        if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to delete color data' }));
-          return;
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'Color data deleted successfully' }));
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+  
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        return;
+      }
+  
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk.toString();
+      });
+  
+      req.on('end', () => {
+        const { emotion } = JSON.parse(body);
+        const userId = decoded.id; 
+  
+        this.colorService.deleteColorByUserIdAndEmotion(userId, emotion, (err, results) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to delete color data' }));
+            return;
+          }
+  
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Color data deleted successfully' }));
+        });
       });
     });
   }
+  
 
   handleLogin(req, res) {
     let body = '';
