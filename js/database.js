@@ -30,8 +30,7 @@ class Database {
       CREATE TABLE IF NOT EXISTS Users (
         id INT(11) AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(150) UNIQUE NOT NULL,
-        password VARCHAR(150) NOT NULL,
-        api_count INT(11) DEFAULT 0
+        password VARCHAR(150) NOT NULL
       ) ENGINE=MyISAM;
     `;
 
@@ -75,13 +74,30 @@ class Database {
     });
   }
 
+  createUserRolesTable() {
+    // Query to create the UserRoles table if it doesn't exist
+    const createUserRolesQuery = `
+      CREATE TABLE IF NOT EXISTS UserRoles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+      ) ENGINE=MyISAM;
+    `;
+    this.connection.query(createUserRolesQuery, (err) => {
+      if (err) throw err;
+      console.log('UserRoles table ready!');
+    }
+    );
+  }
+
   createApiCallCountTable() {
     // Query to create the APICallCount table if it doesn't exist
     const createAPICallCountQuery = `
-      CREATE TABLE IF NOT EXISTS APICallCount (
+      CREATE TABLE IF NOT EXISTS APICallCountByUserId (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
-        api_count INT NOT NULL,
+        api_count INT NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
       ) ENGINE=MyISAM;
     `;
@@ -99,7 +115,7 @@ class Database {
         id INT AUTO_INCREMENT PRIMARY KEY,
         endpoint VARCHAR(150) NOT NULL,
         method VARCHAR(10) NOT NULL,
-        total_calls INT NOT NULL
+        total_calls INT NOT NULL DEFAULT 0
       ) ENGINE=MyISAM;
     `;
 
