@@ -70,6 +70,8 @@ class Server {
         this.handleAdminRoute(req, res);
       } else if (method === 'GET' && parsedUrl.pathname.endsWith('/color')) {
         this.handleColorRoute(req, res);
+      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/color-by-emotion')) {
+        this.handleColorByEmotionRoute(req, res);
       } else if (method === 'POST' && parsedUrl.pathname.endsWith('/add-color')) {
         this.handleAddColorRoute(req, res);
       } else if (method === 'PATCH' && parsedUrl.pathname.endsWith('/edit-color')) {
@@ -120,6 +122,41 @@ class Server {
     });
   }
 
+  handleColorByEmotionRoute(res, req) {
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        return;
+      }
+
+      const userId = decoded.id;
+
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk.toString();
+      });
+
+      req.on('end', () => {
+      const { emotion } = JSON.parse(body);
+      this.colorService
+        .getColorByUserIdAndEmotion(userId, emotion)
+        .then((results) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ color: results }));
+        })
+        .catch((error) => {
+          console.error('Error fetching color data:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
+        });
+      });
+    })
+  }
+
   handleEditColorRoute(req, res) {
   const cookies = Utils.parseCookies(req);
   const token = cookies.jwt;
@@ -155,7 +192,6 @@ class Server {
     });
   });
 }
-
 
   handleAddColorRoute(req, res) {
     let body = '';

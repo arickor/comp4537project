@@ -20,6 +20,23 @@ class ColorService {
         });
     }
 
+    getColorByUserIdAndEmotion(userId, emotion) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT color FROM ColorByUserIdAndEmotion WHERE user_id = ? AND emotion = ?';
+            this.database.executeQuery(query, [userId, emotion], (err, results) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                if (results.length === 0) {
+                    resolve(null);
+                } else {
+                    resolve(results[0].color);
+                }
+            });
+        });
+    }
+
     editColorByUserIdAndEmotion(userId, emotion, color) {
         return new Promise((resolve, reject) => {
             const query = 'UPDATE ColorByUserIdAndEmotion SET color = ? WHERE user_id = ? AND emotion = ?';
