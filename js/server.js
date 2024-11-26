@@ -4,6 +4,7 @@
  * Please review and test the code thoroughly to ensure it meets your requirements and security standards.
  */
 
+require('dotenv').config();
 const http = require("http");
 const url = require("url");
 const Database = require("./database");
@@ -478,10 +479,10 @@ class Server {
 
 // Configuration and initialization
 const dbConfig = {
-  host: "localhost",
-  user: "arickorc_aric",
-  password: "P@$$w0rd12345",
-  database: "arickorc_comp4537project",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 };
 
 const db = new Database(dbConfig);
