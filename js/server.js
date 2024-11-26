@@ -27,7 +27,7 @@ class Server {
 
   start() {
     const server = http.createServer((req, res) => {
-      this.incrementApiStats(req, res, () => {
+      // this.incrementApiStats(req, res, () => {
         res.setHeader(
           "Access-Control-Allow-Origin",
           "https://comp4537project-s2p.azurewebsites.net/"
@@ -136,7 +136,7 @@ class Server {
       server.listen(this.port, () => {
         console.log(`Server running on port ${this.port}`);
       });
-    });
+    // });
   }
 
   // Color
@@ -436,45 +436,29 @@ class Server {
     });
   }
 
-  incrementApiStats(req, res, next) {
-    const cookies = Utils.parseCookies(req);
-    const token = cookies.jwt;
-
-    this.authService.verifyToken(token, (err, decoded) => {
-      if (err || !decoded) {
-        next(); // Skip if user is not authenticated
-        return;
-      }
-
-      const userId = decoded.id;
-      const endpoint = req.url;
-      const method = req.method;
-
-      // Increment user API consumption
-      const userApiQuery = `
-        INSERT INTO APICallCountByUserId (user_id, api_count)
-        VALUES (?, 1)
-        ON DUPLICATE KEY UPDATE api_count = api_count + 1;
-      `;
-      this.database.executeQuery(userApiQuery, [userId], (err) => {
-        if (err)
-          console.error("Error incrementing user API stats:", err.message);
-      });
-
-      // Increment endpoint stats
-      const endpointQuery = `
-        INSERT INTO EndpointStats (endpoint, method, request_count)
-        VALUES (?, ?, 1)
-        ON DUPLICATE KEY UPDATE request_count = request_count + 1;
-      `;
-      this.database.executeQuery(endpointQuery, [endpoint, method], (err) => {
-        if (err)
-          console.error("Error incrementing endpoint stats:", err.message);
-      });
-
-      next();
+  incrementApiStats(userId, endpoint, method) {
+    // Increment user API consumption
+    const userApiQuery = `
+      INSERT INTO APICallCountByUserId (user_id, api_count)
+      VALUES (?, 1)
+      ON DUPLICATE KEY UPDATE api_count = api_count + 1;
+    `;
+    this.database.executeQuery(userApiQuery, [userId], (err) => {
+      if (err)
+        console.error("Error incrementing user API stats:", err.message);
     });
-  }
+  
+    // Increment endpoint stats
+    const endpointQuery = `
+      INSERT INTO EndpointStats (endpoint, method, request_count)
+      VALUES (?, ?, 1)
+      ON DUPLICATE KEY UPDATE request_count = request_count + 1;
+    `;
+    this.database.executeQuery(endpointQuery, [endpoint, method], (err) => {
+      if (err)
+        console.error("Error incrementing endpoint stats:", err.message);
+    });
+  }  
 }
 
 // Configuration and initialization
@@ -499,7 +483,7 @@ seed.seedUserRole(2, "admin");
 const userService = new UserService(db);
 const authService = new AuthService(userService);
 const colorService = new ColorService(db);
-const server = new Server(8080, authService, userService);
+const server = new Server(process.env.PORT || 8080, authService, userService);
 
 server.start();
 
