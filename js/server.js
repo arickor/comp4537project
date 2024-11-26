@@ -493,6 +493,8 @@ db.initializeTables();
 const seed = new SeedData(db);
 seed.seedUser();
 seed.seedAdmin();
+seed.seedUserRole(1, "user");
+seed.seedUserRole(2, "admin");
 
 const userService = new UserService(db);
 const authService = new AuthService(userService);
