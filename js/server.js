@@ -30,7 +30,7 @@ class Server {
     const server = http.createServer((req, res) => {
       res.setHeader(
         "Access-Control-Allow-Origin",
-        "https://comp4537project-s2p.azurewebsites.net/"
+        "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net/"
       );
       res.setHeader(
         "Access-Control-Allow-Methods",
@@ -45,7 +45,7 @@ class Server {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin":
-            "https://comp4537project-s2p.azurewebsites.net/",
+            "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net/",
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Allow-Methods":
             "GET, POST, PUT, PATCH, DELETE, OPTIONS",
