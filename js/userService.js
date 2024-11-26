@@ -1,4 +1,4 @@
-const Utils = require('./utils');
+const Utils = require("./utils");
 
 // User service for managing user-related database operations
 class UserService {
@@ -15,7 +15,7 @@ class UserService {
   ) {
     const hashedPassword = Utils.hashPassword(password);
 
-    const insertUserQuery = 'INSERT INTO Users (email, password) VALUES (?, ?)';
+    const insertUserQuery = "INSERT INTO Users (email, password) VALUES (?, ?)";
     this.database.executeQuery(
       insertUserQuery,
       [email, hashedPassword],
@@ -27,17 +27,18 @@ class UserService {
 
         const userId = results.insertId;
         const insertSecurityQuestionQuery =
-          'INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)';
+          "INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)";
         this.database.executeQuery(
           insertSecurityQuestionQuery,
           [userId, securityQuestion, answer],
           callback
         );
 
-        const setUserRoleQuery = 'INSERT INTO UserRoles (user_id, role) VALUES (?, ?)';
+        const setUserRoleQuery =
+          "INSERT INTO UserRoles (user_id, role) VALUES (?, ?)";
         this.database.executeQuery(
           setUserRoleQuery,
-          [userId, 'user'],
+          [userId, "user"],
           callback
         );
       }
@@ -46,25 +47,26 @@ class UserService {
 
   getUserRoleById(userId) {
     return new Promise((resolve, reject) => {
-      const query = 'SELECT role FROM userRoles WHERE user_id = ?';
+      const query = `SELECT role FROM UserRoles WHERE user_id = ?;`;
       this.database.executeQuery(query, [userId], (err, results) => {
         if (err) {
+          console.error("Error fetching user role:", err.message);
           reject(err);
           return;
         }
+
         if (results.length === 0) {
-          resolve('user'); 
-        } else {
-          resolve(results[0].role); 
+          reject(new Error("User role not found."));
+          return;
         }
+
+        resolve(results[0].role); // Resolve the role
       });
     });
   }
-  
-  
 
   getUserByEmail(email, callback) {
-    const query = 'SELECT * FROM Users WHERE email = ?';
+    const query = "SELECT * FROM Users WHERE email = ?";
     this.database.executeQuery(query, [email], (err, results) => {
       if (err) {
         callback(err, null);
@@ -79,10 +81,9 @@ class UserService {
   }
 
   getAllUsers(callback) {
-    const query = 'SELECT id, email FROM Users';
+    const query = "SELECT id, email FROM Users";
     this.database.executeQuery(query, [], (err, results) => {
       if (err) {
-  
         callback(err, null);
       } else {
         callback(null, results);
@@ -133,7 +134,7 @@ class UserService {
       } else {
         const userId = results[0].id;
         const updatePasswordQuery =
-          'UPDATE Users SET password = ? WHERE id = ?';
+          "UPDATE Users SET password = ? WHERE id = ?";
         this.database.executeQuery(
           updatePasswordQuery,
           [hashedPassword, userId],
@@ -150,7 +151,7 @@ class UserService {
   }
 
   getApiCount(email, callback) {
-    const query = 'SELECT api_count FROM Users WHERE email = ?';
+    const query = "SELECT api_count FROM Users WHERE email = ?";
     this.database.executeQuery(query, [email], (err, results) => {
       if (err) {
         callback(err, null);
@@ -162,7 +163,7 @@ class UserService {
 
   incrementApiCount(email, callback) {
     const incrementQuery =
-      'UPDATE Users SET api_count = api_count + 1 WHERE email = ?';
+      "UPDATE Users SET api_count = api_count + 1 WHERE email = ?";
     this.database.executeQuery(incrementQuery, [email], callback);
   }
 }
