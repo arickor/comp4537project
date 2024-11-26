@@ -4,7 +4,7 @@
  * Please review and test the code thoroughly to ensure it meets your requirements and security standards.
  */
 
-require('dotenv').config();
+require("dotenv").config();
 const http = require("http");
 const url = require("url");
 const Database = require("./database");
@@ -28,114 +28,111 @@ class Server {
   start() {
     const server = http.createServer((req, res) => {
       // this.incrementApiStats(req, res, () => {
-        res.setHeader(
-          "Access-Control-Allow-Origin",
-          "https://comp4537project-s2p.azurewebsites.net/"
-        );
-        res.setHeader(
-          "Access-Control-Allow-Methods",
-          "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-        );
-        res.setHeader("Access-Control-Allow-Credentials", "true");
-        res.setHeader(
-          "Access-Control-Allow-Headers",
-          "Content-Type, Authorization, credentials"
-        );
+      res.setHeader(
+        "Access-Control-Allow-Origin",
+        "https://comp4537project-s2p.azurewebsites.net/"
+      );
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+      );
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, credentials"
+      );
 
-        if (req.method === "OPTIONS") {
-          res.writeHead(204, {
-            "Access-Control-Allow-Origin":
-              "https://comp4537project-s2p.azurewebsites.net/",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods":
-              "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, credentials",
-          });
-          res.end();
-          return;
-        }
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin":
+            "https://comp4537project-s2p.azurewebsites.net/",
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Methods":
+            "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, credentials",
+        });
+        res.end();
+        return;
+      }
 
-        const parsedUrl = url.parse(req.url, true);
-        const method = req.method;
+      const parsedUrl = url.parse(req.url, true);
+      const method = req.method;
 
-        if (method === "POST" && parsedUrl.pathname.endsWith("/login")) {
-          this.handleLogin(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/logout")
-        ) {
-          this.logoutUser(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/register")
-        ) {
-          this.handleRegister(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/get-security-question")
-        ) {
-          this.handleGetSecurityQuestion(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/verify-security-answer")
-        ) {
-          this.handleVerifySecurityAnswer(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/reset-password")
-        ) {
-          this.handleResetPassword(req, res);
-        } else if (
-          method === "GET" &&
-          parsedUrl.pathname.endsWith("/protected")
-        ) {
-          this.handleProtectedRoute(req, res);
-        } else if (
-          method === "GET" &&
-          parsedUrl.pathname.endsWith("/admin/users")
-        ) {
-          this.handleAdminRoute(req, res);
-        } else if (method === "GET" && parsedUrl.pathname.endsWith("/color")) {
-          this.handleColorRoute(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/color-by-emotion")
-        ) {
-          this.handleColorByEmotionRoute(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/add-color")
-        ) {
-          this.handleAddColorRoute(req, res);
-        } else if (
-          method === "PATCH" &&
-          parsedUrl.pathname.endsWith("/edit-color")
-        ) {
-          this.handleEditColorRoute(req, res);
-        } else if (
-          method === "DELETE" &&
-          parsedUrl.pathname.endsWith("/delete-color")
-        ) {
-          this.handleDeleteColorRoute(req, res);
-        } else if (
-          method === "POST" &&
-          parsedUrl.pathname.endsWith("/increment-api-count")
-        ) {
-          this.handleIncrementApiCount(req, res);
-        } else if (
-          method === "GET" &&
-          parsedUrl.pathname.endsWith("/get-api-count")
-        ) {
-          this.handleGetApiCount(req, res);
-        } else {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Route not found." }));
-        }
-      });
+      if (method === "POST" && parsedUrl.pathname.endsWith("/login")) {
+        this.handleLogin(req, res);
+      } else if (method === "POST" && parsedUrl.pathname.endsWith("/logout")) {
+        this.logoutUser(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/register")
+      ) {
+        this.handleRegister(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/get-security-question")
+      ) {
+        this.handleGetSecurityQuestion(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/verify-security-answer")
+      ) {
+        this.handleVerifySecurityAnswer(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/reset-password")
+      ) {
+        this.handleResetPassword(req, res);
+      } else if (
+        method === "GET" &&
+        parsedUrl.pathname.endsWith("/protected")
+      ) {
+        this.handleProtectedRoute(req, res);
+      } else if (
+        method === "GET" &&
+        parsedUrl.pathname.endsWith("/admin/users")
+      ) {
+        this.handleAdminRoute(req, res);
+      } else if (method === "GET" && parsedUrl.pathname.endsWith("/color")) {
+        this.handleColorRoute(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/color-by-emotion")
+      ) {
+        this.handleColorByEmotionRoute(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/add-color")
+      ) {
+        this.handleAddColorRoute(req, res);
+      } else if (
+        method === "PATCH" &&
+        parsedUrl.pathname.endsWith("/edit-color")
+      ) {
+        this.handleEditColorRoute(req, res);
+      } else if (
+        method === "DELETE" &&
+        parsedUrl.pathname.endsWith("/delete-color")
+      ) {
+        this.handleDeleteColorRoute(req, res);
+      } else if (
+        method === "POST" &&
+        parsedUrl.pathname.endsWith("/increment-api-count")
+      ) {
+        this.handleIncrementApiCount(req, res);
+      } else if (
+        method === "GET" &&
+        parsedUrl.pathname.endsWith("/get-api-count")
+      ) {
+        this.handleGetApiCount(req, res);
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Route not found." }));
+      }
+    });
 
-      server.listen(this.port, () => {
-        console.log(`Server running on port ${this.port}`);
-      });
+    server.listen(this.port, () => {
+      console.log(`Server running on port ${this.port}`);
+    });
     // });
   }
 
@@ -152,6 +149,9 @@ class Server {
       }
 
       const userId = decoded.id;
+
+      // Increment API stats for the color route
+      this.incrementApiStats(userId, "/color", "GET");
 
       this.colorService
         .getEmotionAndColorByUserId(userId)
@@ -311,6 +311,9 @@ class Server {
           password
         );
 
+        // Increment API stats after successful login
+        this.incrementApiStats(userId, "/login", "POST");
+
         res.writeHead(200, {
           "Content-Type": "application/json",
           "Set-Cookie": `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
@@ -324,11 +327,27 @@ class Server {
   }
 
   logoutUser(req, res) {
-    res.writeHead(200, {
-      "Set-Cookie": "jwt=; HttpOnly; Secure; Path=/; Max-Age=0",
-      "Content-Type": "application/json",
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        return;
+      }
+
+      const userId = decoded.id;
+
+      // Increment API stats for logout
+      this.incrementApiStats(userId, "/logout", "POST");
+
+      res.writeHead(200, {
+        "Set-Cookie": "jwt=; HttpOnly; Secure; Path=/; Max-Age=0",
+        "Content-Type": "application/json",
+      });
+      res.end(JSON.stringify({ message: "Successfully logged out" }));
     });
-    res.end(JSON.stringify({ message: "Successfully logged out" }));
   }
 
   handleRegister(req, res) {
@@ -353,6 +372,9 @@ class Server {
               })
             );
           } else {
+            // Increment API stats for register
+            this.incrementApiStats(result.insertId, "/register", "POST");
+
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ message: "Registration successful!" }));
           }
@@ -380,6 +402,9 @@ class Server {
           res.writeHead(404, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Email is not found." }));
         } else {
+          // Increment API stats for get-security-question
+          this.incrementApiStats(null, "/get-security-question", "POST");
+
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ question }));
         }
@@ -397,6 +422,11 @@ class Server {
         res.end(JSON.stringify({ error: "Unauthorized access" }));
         return;
       }
+
+      const userId = decoded.id;
+
+      // Increment API stats for admin route
+      this.incrementApiStats(userId, "/admin/users", "GET");
 
       // Fetch both endpoint and user stats
       const endpointQuery = `
@@ -444,10 +474,9 @@ class Server {
       ON DUPLICATE KEY UPDATE api_count = api_count + 1;
     `;
     this.database.executeQuery(userApiQuery, [userId], (err) => {
-      if (err)
-        console.error("Error incrementing user API stats:", err.message);
+      if (err) console.error("Error incrementing user API stats:", err.message);
     });
-  
+
     // Increment endpoint stats
     const endpointQuery = `
       INSERT INTO EndpointStats (endpoint, method, request_count)
@@ -455,10 +484,85 @@ class Server {
       ON DUPLICATE KEY UPDATE request_count = request_count + 1;
     `;
     this.database.executeQuery(endpointQuery, [endpoint, method], (err) => {
-      if (err)
-        console.error("Error incrementing endpoint stats:", err.message);
+      if (err) console.error("Error incrementing endpoint stats:", err.message);
     });
-  }  
+  }
+
+  handleVerifySecurityAnswer(req, res) {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const { email, answer } = JSON.parse(body);
+      this.userService.getSecurityAnswerByEmail(email, (err, storedAnswer) => {
+        if (err || !storedAnswer) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({ error: "User not found or answer not set." })
+          );
+        } else if (storedAnswer.toLowerCase() !== answer.toLowerCase()) {
+          res.writeHead(401, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Please enter a correct answer." }));
+        } else {
+          // Increment API stats for verify-security-answer
+          this.incrementApiStats(null, "/verify-security-answer", "POST");
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ message: "Answer verified successfully." }));
+        }
+      });
+    });
+  }
+
+  handleResetPassword(req, res) {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+
+    req.on("end", () => {
+      const { email, newPassword } = JSON.parse(body);
+      this.userService.resetPassword(email, newPassword, (err, success) => {
+        if (err || !success) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Password reset failed." }));
+        } else {
+          // Increment API stats for reset-password
+          this.incrementApiStats(null, "/reset-password", "POST");
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ message: "Password reset successful." }));
+        }
+      });
+    });
+  }
+
+  handleProtectedRoute(req, res) {
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Unauthorized access" }));
+      } else {
+        const userId = decoded.id;
+
+        // Increment API stats for protected route
+        this.incrementApiStats(userId, "/protected", "GET");
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            message: "Access granted to protected route",
+            user: decoded,
+          })
+        );
+      }
+    });
+  }
 }
 
 // Configuration and initialization
