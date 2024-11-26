@@ -6,95 +6,102 @@ class Seed {
   }
 
   seedUser() {
-    const checkIfEmptyQuery = `SELECT COUNT(*) AS count FROM Users;`;
+    const checkUserQuery = `SELECT id FROM Users WHERE email = ?;`;
+    const email = "user@user.com";
 
-    this.database.executeQuery(checkIfEmptyQuery, [], (err, results) => {
+    this.database.executeQuery(checkUserQuery, [email], (err, results) => {
       if (err) {
-        console.error("Error checking Users table:", err.message);
+        console.error("Error checking user existence:", err.message);
         return;
       }
 
-      const userCount = results[0].count;
-      if (userCount === 0) {
+      if (results.length === 0) {
         const hashedPassword = Utils.hashPassword("user");
-        const email = "user@user.com";
         const insertUserQuery =
           "INSERT INTO Users (email, password) VALUES (?, ?)";
         this.database.executeQuery(
           insertUserQuery,
           [email, hashedPassword],
-          (err, results) => {
+          (err, userResults) => {
             if (err) {
               console.error("Error seeding user:", err.message);
               return;
             }
 
-            const insertUserRoleQuery =
-              "INSERT INTO UserRoles (user_id, role) VALUES (?, ?)";
-            this.database.executeQuery(
-              insertUserRoleQuery,
-              [results.insertId, "user"],
-              (err) => {
-                if (err) {
-                  console.error("Error assigning user role:", err.message);
-                  return;
-                }
-              }
-            );
-
-            console.log("User seeded!");
+            this.seedUserRole(userResults.insertId, "user");
           }
         );
       } else {
-        console.log("Users table is not empty. Skipping user seeding.");
+        console.log(
+          `User with email '${email}' already exists. Skipping user seeding.`
+        );
       }
     });
   }
 
   seedAdmin() {
-    const checkIfEmptyQuery = `SELECT COUNT(*) AS count FROM Users;`;
+    const checkAdminQuery = `SELECT id FROM Users WHERE email = ?;`;
+    const email = "admin@admin.com";
 
-    this.database.executeQuery(checkIfEmptyQuery, [], (err, results) => {
+    this.database.executeQuery(checkAdminQuery, [email], (err, results) => {
       if (err) {
-        console.error("Error checking Users table:", err.message);
+        console.error("Error checking admin existence:", err.message);
         return;
       }
 
-      const userCount = results[0].count;
-      if (userCount === 0) {
+      if (results.length === 0) {
         const hashedPassword = Utils.hashPassword("admin");
-        const email = "admin@admin.com";
-        const insertUserQuery =
+        const insertAdminQuery =
           "INSERT INTO Users (email, password) VALUES (?, ?)";
         this.database.executeQuery(
-          insertUserQuery,
+          insertAdminQuery,
           [email, hashedPassword],
-          (err, results) => {
+          (err, adminResults) => {
             if (err) {
               console.error("Error seeding admin:", err.message);
               return;
             }
 
-            const insertUserRoleQuery =
-              "INSERT INTO UserRoles (user_id, role) VALUES (?, ?)";
-            this.database.executeQuery(
-              insertUserRoleQuery,
-              [results.insertId, "admin"],
-              (err) => {
-                if (err) {
-                  console.error("Error assigning admin role:", err.message);
-                  return;
-                }
-              }
-            );
-
-            console.log("Admin seeded!");
+            this.seedUserRole(adminResults.insertId, "admin");
           }
         );
       } else {
-        console.log("Users table is not empty. Skipping admin seeding.");
+        console.log(
+          `Admin with email '${email}' already exists. Skipping admin seeding.`
+        );
       }
     });
+  }
+
+  seedUserRole(userId, role) {
+    const checkRoleQuery = `SELECT * FROM UserRoles WHERE user_id = ? AND role = ?;`;
+
+    this.database.executeQuery(
+      checkRoleQuery,
+      [userId, role],
+      (err, results) => {
+        if (err) {
+          console.error("Error checking role existence:", err.message);
+          return;
+        }
+
+        if (results.length === 0) {
+          const insertRoleQuery =
+            "INSERT INTO UserRoles (user_id, role) VALUES (?, ?)";
+          this.database.executeQuery(insertRoleQuery, [userId, role], (err) => {
+            if (err) {
+              console.error("Error assigning role:", err.message);
+              return;
+            }
+            console.log(`Role '${role}' assigned to user ID '${userId}'.`);
+          });
+        } else {
+          console.log(
+            `Role '${role}' already exists for user ID '${userId}'. Skipping role assignment.`
+          );
+        }
+      }
+    );
   }
 }
 
