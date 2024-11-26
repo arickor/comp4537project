@@ -71,6 +71,22 @@ class Database {
     });
   }
 
+  createUserRolesTable() {
+    // Query to create the UserRoles table if it doesn't exist
+    const createUserRolesQuery = `
+      CREATE TABLE IF NOT EXISTS UserRoles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        role VARCHAR(20) NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+      ) ENGINE=MyISAM;
+    `;
+    this.connection.query(createUserRolesQuery, (err) => {
+      if (err) throw err;
+      console.log("UserRoles table ready!");
+    });
+  }
+
   createApiCallCountTable() {
     const createApiCallCountQuery = `
       CREATE TABLE IF NOT EXISTS APICallCountByUserId (
