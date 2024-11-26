@@ -168,7 +168,7 @@ class Server {
     });
   }
 
-  handleColorByEmotionRoute(res, req) {
+  handleColorByEmotionRoute(req, res) {
     const cookies = Utils.parseCookies(req);
     const token = cookies.jwt;
 
