@@ -32,44 +32,13 @@ class Database {
         password VARCHAR(150) NOT NULL
       ) ENGINE=MyISAM;
     `;
-
+  
     this.connection.query(createUsersQuery, (err) => {
       if (err) throw err;
       console.log("Users table ready!");
-
-      const checkEmptyQuery = "SELECT COUNT(*) AS count FROM Users";
-      this.connection.query(checkEmptyQuery, (err, result) => {
-        if (err) throw err;
-
-        if (result[0].count === 0) {
-          const insertAdminQuery =
-            "INSERT INTO Users (email, password) VALUES (?, ?)";
-          this.connection.query(
-            insertAdminQuery,
-            ["admin@admin.com", Utils.hashPassword("111")],
-            (err, result) => {
-              if (err) throw err;
-              console.log("Admin user added to Users table.");
-
-              const userId = result.insertId;
-              const insertSecurityQuestionQuery =
-                "INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)";
-              this.connection.query(
-                insertSecurityQuestionQuery,
-                [userId, "Answer is admin", "admin"],
-                (err) => {
-                  if (err) throw err;
-                  console.log("Security question for admin user added.");
-                }
-              );
-            }
-          );
-        }
-      });
-
-      this.createSecurityQuestionsTable();
+      this.createSecurityQuestionsTable(); // Ensure related tables are created
     });
-  }
+  }  
 
   createUserRolesTable() {
     // Query to create the UserRoles table if it doesn't exist
