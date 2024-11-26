@@ -1,5 +1,5 @@
-const mysql = require('mysql2');
-const Utils = require('./utils');
+const mysql = require("mysql2");
+const Utils = require("./utils");
 
 // Database Connection
 class Database {
@@ -10,7 +10,7 @@ class Database {
   connect() {
     this.connection.connect((err) => {
       if (err) throw err;
-      console.log('Connected to database!');
+      console.log("Connected to database!");
     });
   }
 
@@ -25,7 +25,6 @@ class Database {
   }
 
   createUsersTable() {
-    // Query to create the Users table if it doesn't exist
     const createUsersQuery = `
       CREATE TABLE IF NOT EXISTS Users (
         id INT(11) AUTO_INCREMENT PRIMARY KEY,
@@ -36,32 +35,31 @@ class Database {
 
     this.connection.query(createUsersQuery, (err) => {
       if (err) throw err;
-      console.log('Users table ready!');
+      console.log("Users table ready!");
 
-      // Check if table is empty and insert admin user if needed
-      const checkEmptyQuery = 'SELECT COUNT(*) AS count FROM Users';
+      const checkEmptyQuery = "SELECT COUNT(*) AS count FROM Users";
       this.connection.query(checkEmptyQuery, (err, result) => {
         if (err) throw err;
 
         if (result[0].count === 0) {
           const insertAdminQuery =
-            'INSERT INTO Users (email, password) VALUES (?, ?)';
+            "INSERT INTO Users (email, password) VALUES (?, ?)";
           this.connection.query(
             insertAdminQuery,
-            ['admin@admin.com', Utils.hashPassword('111')],
+            ["admin@admin.com", Utils.hashPassword("111")],
             (err, result) => {
               if (err) throw err;
-              console.log('Admin user added to Users table.');
+              console.log("Admin user added to Users table.");
 
               const userId = result.insertId;
               const insertSecurityQuestionQuery =
-                'INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)';
+                "INSERT INTO SecurityQuestions (user_id, question, answer) VALUES (?, ?, ?)";
               this.connection.query(
                 insertSecurityQuestionQuery,
-                [userId, 'Answer is admin', 'admin'],
+                [userId, "Answer is admin", "admin"],
                 (err) => {
                   if (err) throw err;
-                  console.log('Security question for admin user added.');
+                  console.log("Security question for admin user added.");
                 }
               );
             }
@@ -69,31 +67,12 @@ class Database {
         }
       });
 
-      // Now create the SecurityQuestions table with a foreign key to Users table
       this.createSecurityQuestionsTable();
     });
   }
 
-  createUserRolesTable() {
-    // Query to create the UserRoles table if it doesn't exist
-    const createUserRolesQuery = `
-      CREATE TABLE IF NOT EXISTS UserRoles (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        role VARCHAR(20) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
-      ) ENGINE=MyISAM;
-    `;
-    this.connection.query(createUserRolesQuery, (err) => {
-      if (err) throw err;
-      console.log('UserRoles table ready!');
-    }
-    );
-  }
-
   createApiCallCountTable() {
-    // Query to create the APICallCount table if it doesn't exist
-    const createAPICallCountQuery = `
+    const createApiCallCountQuery = `
       CREATE TABLE IF NOT EXISTS APICallCountByUserId (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
@@ -102,14 +81,13 @@ class Database {
       ) ENGINE=MyISAM;
     `;
 
-    this.connection.query(createAPICallCountQuery, (err) => {
+    this.connection.query(createApiCallCountQuery, (err) => {
       if (err) throw err;
-      console.log('APICallCount table ready!');
+      console.log("APICallCountByUserId table ready!");
     });
   }
 
   createColorTableByUserIdAndEmotion() {
-    // Query to create the Color table if it doesn't exist
     const createColorTableQuery = `
       CREATE TABLE IF NOT EXISTS ColorByUserIdAndEmotion (
         user_id INT NOT NULL,
@@ -122,29 +100,28 @@ class Database {
 
     this.connection.query(createColorTableQuery, (err) => {
       if (err) throw err;
-      console.log('Color table ready!');
+      console.log("ColorByUserIdAndEmotion table ready!");
     });
   }
 
-  createTotalApiCallsByEndPointAndMethod() {
-    // Query to create the TotalApiCallsByEndPoint table if it doesn't exist
-    const createTotalApiCallsByEndPointQuery = `
-      CREATE TABLE IF NOT EXISTS TotalApiCallsByEndPoint (
+  createEndpointStatsTable() {
+    const createEndpointStatsQuery = `
+      CREATE TABLE IF NOT EXISTS EndpointStats (
         id INT AUTO_INCREMENT PRIMARY KEY,
         endpoint VARCHAR(150) NOT NULL,
         method VARCHAR(10) NOT NULL,
-        total_calls INT NOT NULL DEFAULT 0
+        request_count INT NOT NULL DEFAULT 0,
+        UNIQUE (endpoint, method)
       ) ENGINE=MyISAM;
     `;
 
-    this.connection.query(createTotalApiCallsByEndPointQuery, (err) => {
+    this.connection.query(createEndpointStatsQuery, (err) => {
       if (err) throw err;
-      console.log('TotalApiCallsByEndPoint table ready!');
+      console.log("EndpointStats table ready!");
     });
   }
 
   createSecurityQuestionsTable() {
-    // Query to create the SecurityQuestions table if it doesn't exist
     const createSecurityQuestionsQuery = `
       CREATE TABLE IF NOT EXISTS SecurityQuestions (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -157,8 +134,18 @@ class Database {
 
     this.connection.query(createSecurityQuestionsQuery, (err) => {
       if (err) throw err;
-      console.log('SecurityQuestions table ready!');
+      console.log("SecurityQuestions table ready!");
     });
+  }
+
+  // Additional method to initialize all tables
+  initializeTables() {
+    this.createUsersTable();
+    this.createUserRolesTable();
+    this.createApiCallCountTable();
+    this.createColorTableByUserIdAndEmotion();
+    this.createEndpointStatsTable();
+    console.log("All database tables initialized.");
   }
 }
 
