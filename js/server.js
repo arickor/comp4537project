@@ -12,6 +12,7 @@ const Database = require("./database");
 const UserService = require("./userService");
 const AuthService = require("./authService");
 const ColorService = require("./colorService");
+const ApiService = require("./apiService");
 
 const SeedData = require("./seed");
 const Utils = require("./utils");
@@ -27,7 +28,6 @@ class Server {
 
   start() {
     const server = http.createServer((req, res) => {
-      // this.incrementApiStats(req, res, () => {
       res.setHeader(
         "Access-Control-Allow-Origin",
         "https://comp4537project-s2p.azurewebsites.net/"
@@ -133,7 +133,6 @@ class Server {
     server.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
     });
-    // });
   }
 
   // Color
@@ -151,7 +150,7 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for the color route
-      this.incrementApiStats(userId, "/color", "GET");
+      apiService.incrementApiStats(userId, "/color", "GET");
 
       this.colorService
         .getEmotionAndColorByUserId(userId)
@@ -312,7 +311,7 @@ class Server {
         );
 
         // Increment API stats after successful login
-        this.incrementApiStats(userId, "/login", "POST");
+        apiService.incrementApiStats(userId, "/login", "POST");
 
         res.writeHead(200, {
           "Content-Type": "application/json",
@@ -340,7 +339,7 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for logout
-      this.incrementApiStats(userId, "/logout", "POST");
+      apiService.incrementApiStats(userId, "/logout", "POST");
 
       res.writeHead(200, {
         "Set-Cookie": "jwt=; HttpOnly; Secure; Path=/; Max-Age=0",
@@ -373,7 +372,7 @@ class Server {
             );
           } else {
             // Increment API stats for register
-            this.incrementApiStats(result.insertId, "/register", "POST");
+            apiService.incrementApiStats(result.insertId, "/register", "POST");
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ message: "Registration successful!" }));
@@ -403,7 +402,7 @@ class Server {
           res.end(JSON.stringify({ error: "Email is not found." }));
         } else {
           // Increment API stats for get-security-question
-          this.incrementApiStats(null, "/get-security-question", "POST");
+          apiService.incrementApiStats(null, "/get-security-question", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ question }));
@@ -426,7 +425,7 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for admin route
-      this.incrementApiStats(userId, "/admin/users", "GET");
+      apiService.incrementApiStats(userId, "/admin/users", "GET");
 
       // Fetch both endpoint and user stats
       const endpointQuery = `
@@ -466,28 +465,6 @@ class Server {
     });
   }
 
-  incrementApiStats(userId, endpoint, method) {
-    // Increment user API consumption
-    const userApiQuery = `
-      INSERT INTO APICallCountByUserId (user_id, api_count)
-      VALUES (?, 1)
-      ON DUPLICATE KEY UPDATE api_count = api_count + 1;
-    `;
-    this.database.executeQuery(userApiQuery, [userId], (err) => {
-      if (err) console.error("Error incrementing user API stats:", err.message);
-    });
-
-    // Increment endpoint stats
-    const endpointQuery = `
-      INSERT INTO EndpointStats (endpoint, method, request_count)
-      VALUES (?, ?, 1)
-      ON DUPLICATE KEY UPDATE request_count = request_count + 1;
-    `;
-    this.database.executeQuery(endpointQuery, [endpoint, method], (err) => {
-      if (err) console.error("Error incrementing endpoint stats:", err.message);
-    });
-  }
-
   handleVerifySecurityAnswer(req, res) {
     let body = "";
     req.on("data", (chunk) => {
@@ -507,7 +484,7 @@ class Server {
           res.end(JSON.stringify({ error: "Please enter a correct answer." }));
         } else {
           // Increment API stats for verify-security-answer
-          this.incrementApiStats(null, "/verify-security-answer", "POST");
+          apiService.incrementApiStats(null, "/verify-security-answer", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Answer verified successfully." }));
@@ -530,7 +507,7 @@ class Server {
           res.end(JSON.stringify({ error: "Password reset failed." }));
         } else {
           // Increment API stats for reset-password
-          this.incrementApiStats(null, "/reset-password", "POST");
+          apiService.incrementApiStats(null, "/reset-password", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Password reset successful." }));
@@ -551,7 +528,7 @@ class Server {
         const userId = decoded.id;
 
         // Increment API stats for protected route
-        this.incrementApiStats(userId, "/protected", "GET");
+        apiService.incrementApiStats(userId, "/protected", "GET");
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
@@ -587,6 +564,7 @@ seed.seedUserRole(2, "admin");
 const userService = new UserService(db);
 const authService = new AuthService(userService);
 const colorService = new ColorService(db);
+const apiService = new ApiService(db);
 const server = new Server(process.env.PORT || 8080, authService, userService);
 
 server.start();
