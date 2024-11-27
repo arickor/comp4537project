@@ -9,7 +9,6 @@ const http = require('http');
 const url = require('url');
 const Database = require('./database');
 const fs = require('fs');
-const express = require('express');
 const path = require('path');
 
 const handleSwaggerRoutes = require('./swagger');
