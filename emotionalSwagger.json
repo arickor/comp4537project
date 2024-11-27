@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Emotional Analysis API",
-    "description": "API for analyzing emotions and managing user colors, authentication, and API statistics.",
+    "description": "API for managing emotions, colors, users, and API statistics. During initialization, the following test users are seeded:\n\n- **User:** `user@user.com` (Password: `user`)\n- **Admin:** `admin@admin.com` (Password: `admin`)\n\nThese roles can be used for testing the endpoints.",
     "version": "1.0.0"
   },
   "servers": [
@@ -37,7 +37,7 @@
       "post": {
         "tags": ["auth"],
         "summary": "User login",
-        "description": "Authenticate a user and return a JWT token.",
+        "description": "Authenticates a user and returns a JWT token. Use the seeded users (`user@user.com` and `admin@admin.com`) for testing.",
         "requestBody": {
           "description": "User login credentials",
           "required": true,
@@ -46,8 +46,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string", "example": "user@example.com" },
-                  "password": { "type": "string", "example": "password123" }
+                  "email": { "type": "string", "example": "admin@admin.com" },
+                  "password": { "type": "string", "example": "admin" }
                 },
                 "required": ["email", "password"]
               }
@@ -62,18 +62,17 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "token": { "type": "string", "description": "JWT token" },
-                    "userId": { "type": "integer", "description": "User ID" },
-                    "userRole": {
-                      "type": "string",
-                      "description": "Role of the user"
-                    }
+                    "token": { "type": "string" },
+                    "userId": { "type": "integer" },
+                    "userRole": { "type": "string" }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Invalid credentials" }
+          "401": {
+            "description": "Invalid credentials"
+          }
         }
       }
     },
@@ -92,44 +91,49 @@
       "post": {
         "tags": ["user"],
         "summary": "Register a new user",
-        "description": "Create a new user in the system. The user will be stored in the `Users` table.",
+        "description": "Registers a new user in the system, sets a default role of 'user', and adds a security question and answer.",
         "requestBody": {
-          "description": "User registration data",
+          "description": "User registration details",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string", "example": "user@example.com" },
-                  "password": { "type": "string", "example": "password123" }
+                  "email": { "type": "string", "example": "newuser@example.com" },
+                  "password": { "type": "string", "example": "password123" },
+                  "securityQuestion": {
+                    "type": "string",
+                    "example": "What is your favorite color?"
+                  },
+                  "answer": { "type": "string", "example": "Blue" }
                 },
-                "required": ["email", "password"]
+                "required": ["email", "password", "securityQuestion", "answer"]
               }
             }
           }
         },
         "responses": {
           "200": { "description": "User successfully registered" },
-          "400": { "description": "Invalid input or user already exists" },
-          "500": { "description": "Server error while creating the user" }
+          "400": { "description": "User already exists or invalid input" },
+          "500": { "description": "Server error during registration" }
         }
       }
     },
     "/get-security-question": {
       "post": {
         "tags": ["auth"],
-        "summary": "Get user's security question",
-        "description": "Retrieve the security question for a given email.",
+        "summary": "Retrieve a user's security question",
+        "description": "Fetch the security question for a given email from the `SecurityQuestions` table.",
         "requestBody": {
-          "description": "User email",
+          "description": "User email to retrieve the security question",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" }
+                  "email": { "type": "string", "example": "user@example.com" }
                 },
                 "required": ["email"]
               }
@@ -144,31 +148,31 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "question": { "type": "string" }
+                    "question": { "type": "string", "example": "What is your favorite color?" }
                   }
                 }
               }
             }
           },
-          "404": { "description": "Email not found" }
+          "404": { "description": "User not found" }
         }
       }
     },
     "/verify-security-answer": {
       "post": {
         "tags": ["auth"],
-        "summary": "Verify user's security answer",
-        "description": "Validate the user's answer to their security question.",
+        "summary": "Verify a user's security answer",
+        "description": "Verify the provided answer to the user's security question stored in the `SecurityQuestions` table.",
         "requestBody": {
-          "description": "User email and answer",
+          "description": "Email and answer for verification",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
-                  "answer": { "type": "string" }
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "answer": { "type": "string", "example": "Blue" }
                 },
                 "required": ["email", "answer"]
               }
@@ -176,27 +180,27 @@
           }
         },
         "responses": {
-          "200": { "description": "Answer verified" },
+          "200": { "description": "Answer verified successfully" },
           "401": { "description": "Incorrect answer" },
-          "404": { "description": "User not found" }
+          "404": { "description": "User or security question not found" }
         }
       }
     },
     "/reset-password": {
       "post": {
         "tags": ["auth"],
-        "summary": "Reset user's password",
-        "description": "Reset the user's password using their email.",
+        "summary": "Reset a user's password",
+        "description": "Resets the user's password using their email. The new password is securely hashed and stored in the `Users` table.",
         "requestBody": {
-          "description": "Email and new password",
+          "description": "Email and new password details",
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
-                  "newPassword": { "type": "string" }
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "newPassword": { "type": "string", "example": "newpassword123" }
                 },
                 "required": ["email", "newPassword"]
               }
@@ -204,8 +208,9 @@
           }
         },
         "responses": {
-          "200": { "description": "Password reset successful" },
-          "400": { "description": "Password reset failed" }
+          "200": { "description": "Password reset successfully" },
+          "400": { "description": "User not found or invalid input" },
+          "500": { "description": "Server error during password reset" }
         }
       }
     },
@@ -260,11 +265,11 @@
     "/admin/users": {
       "get": {
         "tags": ["admin"],
-        "summary": "Fetch all users and their roles",
-        "description": "Retrieve a list of users along with their roles from the `UserRoles` table.",
+        "summary": "Retrieve all users and their roles",
+        "description": "Fetch a list of all users and their associated roles from the `Users` and `UserRoles` tables.",
         "responses": {
           "200": {
-            "description": "List of users and their roles",
+            "description": "List of users and roles retrieved",
             "content": {
               "application/json": {
                 "schema": {
@@ -272,8 +277,8 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                      "userId": { "type": "integer", "example": 1 },
-                      "email": { "type": "string", "example": "user@example.com" },
+                      "id": { "type": "integer", "example": 1 },
+                      "email": { "type": "string", "example": "admin@admin.com" },
                       "role": { "type": "string", "example": "admin" }
                     }
                   }
