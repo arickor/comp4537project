@@ -1,0 +1,613 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Emotional Analysis API",
+    "description": "API for analyzing emotions and managing user colors, authentication, and API statistics.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://arickor.com/comp4537/project/backend/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Endpoints related to user authentication"
+    },
+    {
+      "name": "user",
+      "description": "Endpoints related to user management"
+    },
+    {
+      "name": "color",
+      "description": "Endpoints related to user-specific color and emotion data"
+    },
+    {
+      "name": "analytics",
+      "description": "Endpoints for API usage statistics"
+    },
+    {
+      "name": "admin",
+      "description": "Admin-specific endpoints"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "User login",
+        "description": "Authenticate a user and return a JWT token.",
+        "requestBody": {
+          "description": "User login credentials",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "password": { "type": "string", "example": "password123" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "description": "JWT token" },
+                    "userId": { "type": "integer", "description": "User ID" },
+                    "userRole": {
+                      "type": "string",
+                      "description": "Role of the user"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "User logout",
+        "description": "Log out the current user.",
+        "responses": {
+          "200": { "description": "Logout successful" },
+          "403": { "description": "Unauthorized access" }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": ["user"],
+        "summary": "Register a new user",
+        "description": "Create a new user in the system. The user will be stored in the `Users` table.",
+        "requestBody": {
+          "description": "User registration data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "user@example.com" },
+                  "password": { "type": "string", "example": "password123" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User successfully registered" },
+          "400": { "description": "Invalid input or user already exists" },
+          "500": { "description": "Server error while creating the user" }
+        }
+      }
+    },
+    "/get-security-question": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Get user's security question",
+        "description": "Retrieve the security question for a given email.",
+        "requestBody": {
+          "description": "User email",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" }
+                },
+                "required": ["email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Security question retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "question": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Email not found" }
+        }
+      }
+    },
+    "/verify-security-answer": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Verify user's security answer",
+        "description": "Validate the user's answer to their security question.",
+        "requestBody": {
+          "description": "User email and answer",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "answer": { "type": "string" }
+                },
+                "required": ["email", "answer"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Answer verified" },
+          "401": { "description": "Incorrect answer" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/reset-password": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Reset user's password",
+        "description": "Reset the user's password using their email.",
+        "requestBody": {
+          "description": "Email and new password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "newPassword": { "type": "string" }
+                },
+                "required": ["email", "newPassword"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password reset successful" },
+          "400": { "description": "Password reset failed" }
+        }
+      }
+    },
+    "/protected": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Access protected route",
+        "description": "Access a protected route with a valid JWT token.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access granted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Access granted" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "email": { "type": "string", "example": "user@example.com" },
+                        "userRole": { "type": "string", "example": "admin" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Unauthorized access" }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "tags": ["admin"],
+        "summary": "Fetch all users and their roles",
+        "description": "Retrieve a list of users along with their roles from the `UserRoles` table.",
+        "responses": {
+          "200": {
+            "description": "List of users and their roles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "userId": { "type": "integer", "example": 1 },
+                      "email": { "type": "string", "example": "user@example.com" },
+                      "role": { "type": "string", "example": "admin" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Unauthorized access" },
+          "500": { "description": "Server error while fetching users" }
+        }
+      }
+    },
+    "/color": {
+      "get": {
+        "tags": ["color"],
+        "summary": "Get user emotions and associated colors",
+        "description": "Fetch all emotions and their corresponding colors for a specific user.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token for authentication",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Emotions and colors retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "colors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "emotion": { "type": "string" },
+                          "color": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Unauthorized access" },
+          "500": { "description": "Failed to fetch emotions and colors" }
+        }
+      }
+    },    
+    "/color-by-emotion": {
+      "post": {
+        "tags": ["color"],
+        "summary": "Get color for a specific emotion",
+        "description": "Fetch the color associated with a specific emotion for the authenticated user.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token for authentication",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Emotion to fetch the color for",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emotion": { "type": "string", "example": "happy" }
+                },
+                "required": ["emotion"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Color retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "color": { "type": "string", "example": "#FFD700" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Unauthorized access" },
+          "500": { "description": "Failed to fetch color" }
+        }
+      }
+    },
+    "/add-color": {
+      "post": {
+        "tags": ["color"],
+        "summary": "Add a new color-emotion mapping",
+        "description": "Add a new emotion-to-color mapping for a specific user.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token for authentication",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Details of the emotion and color to add",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": { "type": "integer", "example": 1 },
+                  "emotion": { "type": "string", "example": "excited" },
+                  "color": { "type": "string", "example": "#FF4500" }
+                },
+                "required": ["userId", "emotion", "color"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Color added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Color added successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Color for this emotion already exists" },
+          "500": { "description": "Failed to add color" }
+        }
+      }
+    },
+    "/edit-color": {
+      "patch": {
+        "tags": ["color"],
+        "summary": "Edit an existing color-emotion mapping",
+        "description": "Edit an emotion-to-color mapping for a specific user.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token for authentication",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Details of the emotion and color to edit",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": { "type": "integer", "example": 1 },
+                  "emotion": { "type": "string", "example": "excited" },
+                  "color": { "type": "string", "example": "#00FF00" }
+                },
+                "required": ["userId", "emotion", "color"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Color edited successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Color updated successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to edit color" }
+        }
+      }
+    },
+    "/delete-color": {
+      "delete": {
+        "tags": ["color"],
+        "summary": "Delete a color-emotion mapping",
+        "description": "Delete an emotion-to-color mapping for a specific user.",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "JWT token for authentication",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Bearer <JWT_TOKEN>"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Details of the emotion to delete",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": { "type": "integer", "example": 1 },
+                  "emotion": { "type": "string", "example": "excited" }
+                },
+                "required": ["userId", "emotion"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Color deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Color deleted successfully" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to delete color" }
+        }
+      }
+    },
+    "/increment-api-count": {
+      "post": {
+        "tags": ["analytics"],
+        "summary": "Increment API call statistics",
+        "description": "Updates the `APICallCountByUserId` and `EndpointStats` tables to track API usage.",
+        "requestBody": {
+          "description": "Details of the API call",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": { "type": "integer", "example": 1 },
+                  "endpoint": { "type": "string", "example": "/color" },
+                  "method": { "type": "string", "example": "GET" }
+                },
+                "required": ["userId", "endpoint", "method"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "API usage successfully incremented" },
+          "500": { "description": "Failed to update API statistics" }
+        }
+      }
+    },    
+    "/get-api-count": {
+      "get": {
+        "tags": ["analytics"],
+        "summary": "Get API call statistics",
+        "description": "Retrieve statistics from the `APICallCountByUserId` and `EndpointStats` tables.",
+        "responses": {
+          "200": {
+            "description": "API usage statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": { "type": "integer", "example": 1 },
+                          "api_count": { "type": "integer", "example": 42 }
+                        }
+                      }
+                    },
+                    "endpoints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "endpoint": { "type": "string", "example": "/color" },
+                          "method": { "type": "string", "example": "GET" },
+                          "request_count": { "type": "integer", "example": 100 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to fetch API statistics" }
+        }
+      }
+    }    
+  }
+}
