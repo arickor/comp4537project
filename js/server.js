@@ -11,11 +11,8 @@ const Database = require('./database');
 const fs = require('fs');
 const express = require('express');
 const path = require('path');
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('../docs/emotionalSwagger.json');
-const swaggerUiDist = require('swagger-ui-dist');
 
-const swaggerUiPath = swaggerUiDist.absolutePath();
+const handleSwaggerRoutes = require('./swagger');
 
 const UserService = require('./userService');
 const AuthService = require('./authService');
@@ -74,6 +71,10 @@ class Server {
       //   this.serveSwagger(req, res, pathname);
       //   return;
       // }
+
+        if (handleSwaggerRoutes(req, res)) {
+          return;
+        }
 
       if (method === 'POST' && parsedUrl.pathname.endsWith('/login')) {
         this.handleLogin(req, res);
@@ -141,6 +142,8 @@ class Server {
         res.end(JSON.stringify({ error: 'Route not found.' }));
       }
     });
+
+    
 
     server.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
@@ -687,7 +690,7 @@ const server = new Server(
 server.start();
 
 // const app = express();
-// const PORT = process.env.PORT || 8080;
+// const PORT = process.env.PORT || 3030;
 
 // app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
