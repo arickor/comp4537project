@@ -35,9 +35,9 @@ class Server {
   start() {
     const server = http.createServer((req, res) => {
       res.setHeader(
-        'Access-Control-Allow-Origin',
+        "Access-Control-Allow-Origin",
         "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
-        // 'http://localhost:3000'
+        // "http://localhost:3000"
       );
       res.setHeader(
         'Access-Control-Allow-Methods',

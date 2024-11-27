@@ -3,8 +3,18 @@ const Utils = require("./utils");
 
 // Database Connection
 class Database {
-  constructor(config) {
-    this.connection = mysql.createConnection(config);
+  constructor() {
+    this.connection = mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      port: process.env.DB_PORT,
+      ssl: {
+        rejectUnauthorized: true, // Reject unauthorized certificates
+      },
+    });
+    this.connect();
   }
 
   connect() {
@@ -133,5 +143,6 @@ class Database {
     console.log("All database tables initialized.");
   }
 }
+
 
 module.exports = Database;
