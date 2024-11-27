@@ -31,8 +31,8 @@ class Server {
     const server = http.createServer((req, res) => {
       res.setHeader(
         "Access-Control-Allow-Origin",
-        // "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
-        "http://localhost:3000"
+        "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
+        // "http://localhost:3000"
       );
       res.setHeader(
         "Access-Control-Allow-Methods",
@@ -47,8 +47,8 @@ class Server {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin":
-          // "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
-          "http://localhost:3000",
+          "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
+          // "http://localhost:3000",
           "Access-Control-Allow-Methods":
             "GET, POST, PUT, PATCH, DELETE, OPTIONS",
           "Access-Control-Allow-Headers":
