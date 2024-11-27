@@ -8,9 +8,13 @@ require("dotenv").config();
 const http = require("http");
 const url = require("url");
 const Database = require("./database");
-const express = require("express");
-const swaggerUi = require("swagger-ui-express");
+const fs = require("fs");
+const path = require("path");
+const url = require("url");
 const swaggerDocument = require("../docs/emotionalSwagger.json");
+const swaggerUiDist = require("swagger-ui-dist");
+
+const swaggerUiPath = swaggerUiDist.absolutePath();
 
 const UserService = require("./userService");
 const AuthService = require("./authService");
@@ -50,7 +54,7 @@ class Server {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin":
-          "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
+            "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
           // "http://localhost:3000",
           "Access-Control-Allow-Methods":
             "GET, POST, PUT, PATCH, DELETE, OPTIONS",
@@ -64,6 +68,11 @@ class Server {
 
       const parsedUrl = url.parse(req.url, true);
       const method = req.method;
+
+      if (pathname.startsWith("/api-docs")) {
+        this.serveSwagger(req, res, pathname);
+        return;
+      }
 
       if (method === "POST" && parsedUrl.pathname.endsWith("/login")) {
         this.handleLogin(req, res);
@@ -197,7 +206,11 @@ class Server {
         this.colorService
           .getColorByUserIdAndEmotion(userId, emotion)
           .then((results) => {
-            this.apiService.incrementApiStats(userId, '/color-by-emotion', 'POST');
+            this.apiService.incrementApiStats(
+              userId,
+              "/color-by-emotion",
+              "POST"
+            );
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ color: results }));
           })
@@ -232,7 +245,7 @@ class Server {
         this.colorService
           .editColorByUserIdAndEmotion(userId, emotion, color)
           .then((results) => {
-            this.apiService.incrementApiStats(userId, '/edit-color', 'PATCH');
+            this.apiService.incrementApiStats(userId, "/edit-color", "PATCH");
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(
               JSON.stringify({ message: "Color data updated successfully" })
@@ -258,7 +271,7 @@ class Server {
       this.colorService
         .addColorByUserIdAndEmotion(userId, emotion, color)
         .then((results) => {
-          this.apiService.incrementApiStats(userId, '/add-color', 'POST');
+          this.apiService.incrementApiStats(userId, "/add-color", "POST");
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Color data added successfully" }));
         })
@@ -292,7 +305,11 @@ class Server {
         this.colorService
           .deleteColorByUserIdAndEmotion(userId, emotion)
           .then((results) => {
-            this.apiService.incrementApiStats(userId, '/delete-color', 'DELETE');
+            this.apiService.incrementApiStats(
+              userId,
+              "/delete-color",
+              "DELETE"
+            );
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(
               JSON.stringify({ message: "Color data deleted successfully" })
@@ -383,7 +400,11 @@ class Server {
             );
           } else {
             // Increment API stats for register
-            this.apiService.incrementApiStats(result.insertId, "/register", "POST");
+            this.apiService.incrementApiStats(
+              result.insertId,
+              "/register",
+              "POST"
+            );
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ message: "Registration successful!" }));
@@ -413,7 +434,11 @@ class Server {
           res.end(JSON.stringify({ error: "Email is not found." }));
         } else {
           // Increment API stats for get-security-question
-          this.apiServiceapiService.incrementApiStats(null, "/get-security-question", "POST");
+          this.apiServiceapiService.incrementApiStats(
+            null,
+            "/get-security-question",
+            "POST"
+          );
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ question }));
@@ -441,13 +466,13 @@ class Server {
       // Fetch both endpoint and user stats
       this.apiService.getApiStats((err, stats) => {
         if (err) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to fetch stats" }));
           return;
         }
 
         // Use stats from callback
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             endpoints: stats.endpoints,
@@ -477,7 +502,11 @@ class Server {
           res.end(JSON.stringify({ error: "Please enter a correct answer." }));
         } else {
           // Increment API stats for verify-security-answer
-          this.apiService.incrementApiStats(null, "/verify-security-answer", "POST");
+          this.apiService.incrementApiStats(
+            null,
+            "/verify-security-answer",
+            "POST"
+          );
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Answer verified successfully." }));
@@ -533,6 +562,58 @@ class Server {
       }
     });
   }
+
+  serveSwagger(req, res, pathname) {
+    if (pathname === "/api-docs") {
+      // Serve the Swagger UI index.html
+      fs.readFile(
+        path.join(swaggerUiPath, "index.html"),
+        "utf8",
+        (err, data) => {
+          if (err) {
+            res.writeHead(500, { "Content-Type": "text/plain" });
+            res.end("Error loading Swagger UI");
+            return;
+          }
+          // Replace the default Swagger JSON URL with your actual Swagger JSON URL
+          const modifiedHtml = data.replace(
+            'url: "https://petstore.swagger.io/v2/swagger.json"',
+            `url: "/swagger.json"`
+          );
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(modifiedHtml);
+        }
+      );
+    } else if (pathname === "/swagger.json") {
+      // Serve the Swagger JSON document
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(swaggerDocument));
+    } else {
+      // Serve static files (CSS, JS, etc.) for Swagger UI
+      const filePath = path.join(
+        swaggerUiPath,
+        pathname.replace("/api-docs", "")
+      );
+      fs.readFile(filePath, (err, fileContent) => {
+        if (err) {
+          res.writeHead(404);
+          res.end("File not found");
+          return;
+        }
+        const ext = path.extname(filePath);
+        const contentType =
+          ext === ".css"
+            ? "text/css"
+            : ext === ".js"
+            ? "application/javascript"
+            : ext === ".html"
+            ? "text/html"
+            : "text/plain";
+        res.writeHead(200, { "Content-Type": contentType });
+        res.end(fileContent);
+      });
+    }
+  }
 }
 
 // Configuration and initialization
@@ -558,8 +639,24 @@ const userService = new UserService(db);
 const authService = new AuthService(userService);
 const colorService = new ColorService(db);
 const apiService = new ApiService(db);
-const server = new Server(process.env.PORT || 8080, authService, userService, colorService, apiService);
+const server = new Server(
+  process.env.PORT || 8080,
+  authService,
+  userService,
+  colorService,
+  apiService
+);
 
 server.start();
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+});
 
 module.exports = Server;
