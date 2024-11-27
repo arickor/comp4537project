@@ -60,7 +60,7 @@ class Database {
     const createApiCallCountQuery = `
       CREATE TABLE IF NOT EXISTS APICallCountByUserId (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
+        user_id INT NOT NULL UNIQUE,
         api_count INT NOT NULL DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
       ) ENGINE=MyISAM;
