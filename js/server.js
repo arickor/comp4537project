@@ -19,18 +19,20 @@ const Utils = require("./utils");
 
 // Server with routes and middleware for handling requests
 class Server {
-  constructor(port, authService, userService) {
+  constructor(port, authService, userService, colorService, apiService) {
     this.port = port;
     this.authService = authService;
     this.userService = userService;
     this.colorService = colorService;
+    this.apiService = apiService;
   }
 
   start() {
     const server = http.createServer((req, res) => {
       res.setHeader(
         "Access-Control-Allow-Origin",
-        "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
+        // "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
+        "http://localhost:3000"
       );
       res.setHeader(
         "Access-Control-Allow-Methods",
@@ -45,7 +47,8 @@ class Server {
       if (req.method === "OPTIONS") {
         res.writeHead(204, {
           "Access-Control-Allow-Origin":
-            "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
+          // "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
+          "http://localhost:3000",
           "Access-Control-Allow-Methods":
             "GET, POST, PUT, PATCH, DELETE, OPTIONS",
           "Access-Control-Allow-Headers":
@@ -151,7 +154,7 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for the color route
-      apiService.incrementApiStats(userId, "/color", "GET");
+      this.apiService.incrementApiStats(userId, "/color", "GET");
 
       this.colorService
         .getEmotionAndColorByUserId(userId)
@@ -191,6 +194,7 @@ class Server {
         this.colorService
           .getColorByUserIdAndEmotion(userId, emotion)
           .then((results) => {
+            this.apiService.incrementApiStats(userId, '/color-by-emotion', 'POST');
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ color: results }));
           })
@@ -225,6 +229,7 @@ class Server {
         this.colorService
           .editColorByUserIdAndEmotion(userId, emotion, color)
           .then((results) => {
+            this.apiService.incrementApiStats(userId, '/edit-color', 'PATCH');
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(
               JSON.stringify({ message: "Color data updated successfully" })
@@ -250,6 +255,7 @@ class Server {
       this.colorService
         .addColorByUserIdAndEmotion(userId, emotion, color)
         .then((results) => {
+          this.apiService.incrementApiStats(userId, '/add-color', 'POST');
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Color data added successfully" }));
         })
@@ -283,6 +289,7 @@ class Server {
         this.colorService
           .deleteColorByUserIdAndEmotion(userId, emotion)
           .then((results) => {
+            this.apiService.incrementApiStats(userId, '/delete-color', 'DELETE');
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(
               JSON.stringify({ message: "Color data deleted successfully" })
@@ -312,7 +319,7 @@ class Server {
         );
 
         // Increment API stats after successful login
-        apiService.incrementApiStats(userId, "/login", "POST");
+        this.apiService.incrementApiStats(userId, "/login", "POST");
 
         res.writeHead(200, {
           "Content-Type": "application/json",
@@ -340,7 +347,7 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for logout
-      apiService.incrementApiStats(userId, "/logout", "POST");
+      this.apiService.incrementApiStats(userId, "/logout", "POST");
 
       res.writeHead(200, {
         "Set-Cookie": "jwt=; HttpOnly; Secure; Path=/; Max-Age=0",
@@ -373,7 +380,7 @@ class Server {
             );
           } else {
             // Increment API stats for register
-            apiService.incrementApiStats(result.insertId, "/register", "POST");
+            this.apiService.incrementApiStats(result.insertId, "/register", "POST");
 
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ message: "Registration successful!" }));
@@ -403,7 +410,7 @@ class Server {
           res.end(JSON.stringify({ error: "Email is not found." }));
         } else {
           // Increment API stats for get-security-question
-          apiService.incrementApiStats(null, "/get-security-question", "POST");
+          this.apiServiceapiService.incrementApiStats(null, "/get-security-question", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ question }));
@@ -426,42 +433,24 @@ class Server {
       const userId = decoded.id;
 
       // Increment API stats for admin route
-      apiService.incrementApiStats(userId, "/admin/users", "GET");
+      this.apiService.incrementApiStats(userId, "/admin/users", "GET");
 
       // Fetch both endpoint and user stats
-      const endpointQuery = `
-        SELECT method, endpoint, request_count
-        FROM EndpointStats;
-      `;
-      const userQuery = `
-        SELECT u.id AS userId, u.email, u.username, a.api_count
-        FROM Users u
-        LEFT JOIN APICallCountByUserId a ON u.id = a.user_id;
-      `;
-
-      this.database.executeQuery(endpointQuery, [], (err, endpointResults) => {
+      this.apiService.getApiStats((err, stats) => {
         if (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to fetch endpoint stats" }));
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
           return;
         }
 
-        this.database.executeQuery(userQuery, [], (err, userResults) => {
-          if (err) {
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Failed to fetch user stats" }));
-            return;
-          }
-
-          // Return combined stats
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              endpoints: endpointResults,
-              users: userResults,
-            })
-          );
-        });
+        // Use stats from callback
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            endpoints: stats.endpoints,
+            users: stats.users,
+          })
+        );
       });
     });
   }
@@ -485,7 +474,7 @@ class Server {
           res.end(JSON.stringify({ error: "Please enter a correct answer." }));
         } else {
           // Increment API stats for verify-security-answer
-          apiService.incrementApiStats(null, "/verify-security-answer", "POST");
+          this.apiService.incrementApiStats(null, "/verify-security-answer", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Answer verified successfully." }));
@@ -508,7 +497,7 @@ class Server {
           res.end(JSON.stringify({ error: "Password reset failed." }));
         } else {
           // Increment API stats for reset-password
-          apiService.incrementApiStats(null, "/reset-password", "POST");
+          this.apiService.incrementApiStats(null, "/reset-password", "POST");
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ message: "Password reset successful." }));
@@ -529,7 +518,7 @@ class Server {
         const userId = decoded.id;
 
         // Increment API stats for protected route
-        apiService.incrementApiStats(userId, "/protected", "GET");
+        this.apiService.incrementApiStats(userId, "/protected", "GET");
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(
@@ -566,7 +555,7 @@ const userService = new UserService(db);
 const authService = new AuthService(userService);
 const colorService = new ColorService(db);
 const apiService = new ApiService(db);
-const server = new Server(process.env.PORT || 8080, authService, userService);
+const server = new Server(process.env.PORT || 8080, authService, userService, colorService, apiService);
 
 server.start();
 
