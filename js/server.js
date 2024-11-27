@@ -18,9 +18,9 @@ const UserService = require('./userService');
 const AuthService = require('./authService');
 const ColorService = require('./colorService');
 const ApiService = require('./apiService');
-
 const SeedData = require('./seed');
 const Utils = require('./utils');
+const messages = require('./lang/en/en');
 
 // Server with routes and middleware for handling requests
 class Server {
@@ -35,8 +35,8 @@ class Server {
   start() {
     const server = http.createServer((req, res) => {
       res.setHeader(
-        "Access-Control-Allow-Origin",
-        "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
+        'Access-Control-Allow-Origin',
+        'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net'
         // "http://localhost:3000"
       );
       res.setHeader(
@@ -52,8 +52,8 @@ class Server {
       if (req.method === 'OPTIONS') {
         res.writeHead(204, {
           'Access-Control-Allow-Origin':
-            "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
-            // 'http://localhost:3000',
+            'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net',
+          // 'http://localhost:3000',
           'Access-Control-Allow-Methods':
             'GET, POST, PUT, PATCH, DELETE, OPTIONS',
           'Access-Control-Allow-Headers':
@@ -72,9 +72,9 @@ class Server {
       //   return;
       // }
 
-        if (handleSwaggerRoutes(req, res)) {
-          return;
-        }
+      if (handleSwaggerRoutes(req, res)) {
+        return;
+      }
 
       if (method === 'POST' && parsedUrl.pathname.endsWith('/login')) {
         this.handleLogin(req, res);
@@ -139,11 +139,9 @@ class Server {
         this.handleProfileRoute(req, res);
       } else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Route not found.' }));
+        res.end(JSON.stringify({ error: messages.error.route }));
       }
     });
-
-    
 
     server.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
@@ -158,7 +156,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -177,7 +175,7 @@ class Server {
         .catch((error) => {
           console.error('Error fetching color data:', error);
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
+          res.end(JSON.stringify({ error: messages.error.fetchColor }));
         });
     });
   }
@@ -189,7 +187,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -216,7 +214,7 @@ class Server {
           .catch((error) => {
             console.error('Error fetching color data:', error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
+            res.end(JSON.stringify({ error: messages.error.fetchColor }));
           });
       });
     });
@@ -229,7 +227,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -245,14 +243,12 @@ class Server {
           .then((results) => {
             this.apiService.incrementApiStats(userId, '/color/edit', 'PATCH');
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({ message: 'Color data updated successfully' })
-            );
+            res.end(JSON.stringify({ message: messages.success.updateColor }));
           })
           .catch((err) => {
             console.error('Error updating color:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Failed to edit color data' }));
+            res.end(JSON.stringify({ error: messages.error.editColor }));
           });
       });
     });
@@ -271,7 +267,7 @@ class Server {
         .then((results) => {
           this.apiService.incrementApiStats(userId, '/color/add', 'POST');
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Color data added successfully' }));
+          res.end(JSON.stringify({ message: messages.success.addColor }));
         })
         .catch((err) => {
           console.error('Error adding color:', err.message);
@@ -288,7 +284,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -309,14 +305,12 @@ class Server {
               'DELETE'
             );
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({ message: 'Color data deleted successfully' })
-            );
+            res.end(JSON.stringify({ message: messages.success.deleteColor }));
           })
           .catch((err) => {
             console.error('Error deleting color:', err.message);
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Failed to delete color data' }));
+            res.end(JSON.stringify({ error: messages.error.deleteColor }));
           });
       });
     });
@@ -358,7 +352,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -371,7 +365,7 @@ class Server {
         'Set-Cookie': 'jwt=; HttpOnly; Secure; Path=/; Max-Age=0',
         'Content-Type': 'application/json',
       });
-      res.end(JSON.stringify({ message: 'Successfully logged out' }));
+      res.end(JSON.stringify({ message: messages.success.logout }));
     });
   }
 
@@ -391,11 +385,7 @@ class Server {
         (err, result) => {
           if (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({
-                error: 'Registration failed. Please try again.',
-              })
-            );
+            res.end(JSON.stringify({ error: messages.error.register }));
           } else {
             // Increment API stats for register
             this.apiService.incrementApiStats(
@@ -405,7 +395,7 @@ class Server {
             );
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'Registration successful!' }));
+            res.end(JSON.stringify({ message: messages.success.register }));
           }
         }
       );
@@ -429,7 +419,7 @@ class Server {
       this.userService.getSecurityQuestionByEmail(email, (err, question) => {
         if (err || !question) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Email is not found.' }));
+          res.end(JSON.stringify({ error: messages.error.emailNotFound }));
         } else {
           // Increment API stats for get-security-question
           this.apiServiceapiService.incrementApiStats(
@@ -452,7 +442,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err || decoded.userRole !== 'admin') {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -465,7 +455,7 @@ class Server {
       this.apiService.getApiStats((err, stats) => {
         if (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
+          res.end(JSON.stringify({ error: messages.error.apiStats }));
           return;
         }
 
@@ -488,7 +478,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err || decoded.userRole !== 'admin') {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
       }
 
@@ -497,7 +487,7 @@ class Server {
       this.userService.getUserById(userId, (err, user) => {
         if (err || !user) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'User not found' }));
+          res.end(JSON.stringify({ error: messages.error.userNotFound }));
           return;
         }
 
@@ -507,7 +497,7 @@ class Server {
         this.apiService.getApiStats((err, stats) => {
           if (err) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
+            res.end(JSON.stringify({ error: messages.error.apiStats }));
             return;
           }
 
@@ -534,12 +524,10 @@ class Server {
       this.userService.getSecurityAnswerByEmail(email, (err, storedAnswer) => {
         if (err || !storedAnswer) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({ error: 'User not found or answer not set.' })
-          );
+          res.end(JSON.stringify({ error: messages.error.userNotFound }));
         } else if (storedAnswer.toLowerCase() !== answer.toLowerCase()) {
           res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Please enter a correct answer.' }));
+          res.end(JSON.stringify({ error: messages.error.answer }));
         } else {
           // Increment API stats for verify-security-answer
           this.apiService.incrementApiStats(
@@ -549,7 +537,7 @@ class Server {
           );
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Answer verified successfully.' }));
+          res.end(JSON.stringify({ message: messages.success.answer }));
         }
       });
     });
@@ -566,13 +554,13 @@ class Server {
       this.userService.resetPassword(email, newPassword, (err, success) => {
         if (err || !success) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Password reset failed.' }));
+          res.end(JSON.stringify({ error: messages.error.resetPassword }));
         } else {
           // Increment API stats for reset-password
           this.apiService.incrementApiStats(null, '/reset-password', 'POST');
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Password reset successful.' }));
+          res.end(JSON.stringify({ message: messages.success.resetPassword }));
         }
       });
     });
@@ -585,7 +573,7 @@ class Server {
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        res.end(JSON.stringify({ error: messages.error.authorization }));
       } else {
         const userId = decoded.id;
 
