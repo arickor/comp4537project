@@ -4,25 +4,26 @@
  * Please review and test the code thoroughly to ensure it meets your requirements and security standards.
  */
 
-require("dotenv").config();
-const http = require("http");
-const url = require("url");
-const Database = require("./database");
-const fs = require("fs");
-const path = require("path");
-const url = require("url");
-const swaggerDocument = require("../docs/emotionalSwagger.json");
-const swaggerUiDist = require("swagger-ui-dist");
+require('dotenv').config();
+const http = require('http');
+const url = require('url');
+const Database = require('./database');
+const fs = require('fs');
+const express = require('express');
+const path = require('path');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../docs/emotionalSwagger.json');
+const swaggerUiDist = require('swagger-ui-dist');
 
 const swaggerUiPath = swaggerUiDist.absolutePath();
 
-const UserService = require("./userService");
-const AuthService = require("./authService");
-const ColorService = require("./colorService");
-const ApiService = require("./apiService");
+const UserService = require('./userService');
+const AuthService = require('./authService');
+const ColorService = require('./colorService');
+const ApiService = require('./apiService');
 
-const SeedData = require("./seed");
-const Utils = require("./utils");
+const SeedData = require('./seed');
+const Utils = require('./utils');
 
 // Server with routes and middleware for handling requests
 class Server {
@@ -37,30 +38,30 @@ class Server {
   start() {
     const server = http.createServer((req, res) => {
       res.setHeader(
-        "Access-Control-Allow-Origin",
+        'Access-Control-Allow-Origin',
         "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net"
-        // "http://localhost:3000"
+        // 'http://localhost:3000'
       );
       res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        'Access-Control-Allow-Methods',
+        'GET, POST, PUT, PATCH, DELETE, OPTIONS'
       );
-      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, credentials"
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, credentials'
       );
 
-      if (req.method === "OPTIONS") {
+      if (req.method === 'OPTIONS') {
         res.writeHead(204, {
-          "Access-Control-Allow-Origin":
+          'Access-Control-Allow-Origin':
             "https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net",
-          // "http://localhost:3000",
-          "Access-Control-Allow-Methods":
-            "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers":
-            "Content-Type, Authorization, credentials",
-          "Access-Control-Allow-Credentials": "true",
+            // 'http://localhost:3000',
+          'Access-Control-Allow-Methods':
+            'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers':
+            'Content-Type, Authorization, credentials',
+          'Access-Control-Allow-Credentials': 'true',
         });
         res.end();
         return;
@@ -69,80 +70,75 @@ class Server {
       const parsedUrl = url.parse(req.url, true);
       const method = req.method;
 
-      if (pathname.startsWith("/api-docs")) {
-        this.serveSwagger(req, res, pathname);
-        return;
-      }
+      // if (pathname.startsWith("/api-docs")) {
+      //   this.serveSwagger(req, res, pathname);
+      //   return;
+      // }
 
-      if (method === "POST" && parsedUrl.pathname.endsWith("/login")) {
+      if (method === 'POST' && parsedUrl.pathname.endsWith('/login')) {
         this.handleLogin(req, res);
-      } else if (method === "POST" && parsedUrl.pathname.endsWith("/logout")) {
+      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/logout')) {
         this.logoutUser(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/register")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/register')
       ) {
         this.handleRegister(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/get-security-question")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/get-security-question')
       ) {
         this.handleGetSecurityQuestion(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/verify-security-answer")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/verify-security-answer')
       ) {
         this.handleVerifySecurityAnswer(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/reset-password")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/reset-password')
       ) {
         this.handleResetPassword(req, res);
       } else if (
-        method === "GET" &&
-        parsedUrl.pathname.endsWith("/protected")
+        method === 'GET' &&
+        parsedUrl.pathname.endsWith('/protected')
       ) {
         this.handleProtectedRoute(req, res);
       } else if (
-        method === "GET" &&
-        parsedUrl.pathname.endsWith("/admin/users")
+        method === 'GET' &&
+        parsedUrl.pathname.endsWith('/user/admin')
       ) {
         this.handleAdminRoute(req, res);
-      } else if (method === "GET" && parsedUrl.pathname.endsWith("/color")) {
+      } else if (method === 'GET' && parsedUrl.pathname.endsWith('/color')) {
         this.handleColorRoute(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/color-by-emotion")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/color-by-emotion')
       ) {
         this.handleColorByEmotionRoute(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/add-color")
+        method === 'POST' &&
+        parsedUrl.pathname.endsWith('/color/add')
       ) {
         this.handleAddColorRoute(req, res);
       } else if (
-        method === "PATCH" &&
-        parsedUrl.pathname.endsWith("/edit-color")
+        method === 'PATCH' &&
+        parsedUrl.pathname.endsWith('/color/edit')
       ) {
         this.handleEditColorRoute(req, res);
       } else if (
-        method === "DELETE" &&
-        parsedUrl.pathname.endsWith("/delete-color")
+        method === 'DELETE' &&
+        parsedUrl.pathname.endsWith('/color/delete')
       ) {
         this.handleDeleteColorRoute(req, res);
       } else if (
-        method === "POST" &&
-        parsedUrl.pathname.endsWith("/increment-api-count")
+        method === 'GET' &&
+        parsedUrl.pathname.endsWith('/user/profile')
       ) {
-        this.handleIncrementApiCount(req, res);
-      } else if (
-        method === "GET" &&
-        parsedUrl.pathname.endsWith("/get-api-count")
-      ) {
-        this.handleGetApiCount(req, res);
+        this.handleProfileRoute(req, res);
       } else {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Route not found." }));
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Route not found.' }));
       }
     });
 
@@ -158,27 +154,27 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
       const userId = decoded.id;
 
       // Increment API stats for the color route
-      this.apiService.incrementApiStats(userId, "/color", "GET");
+      this.apiService.incrementApiStats(userId, '/color', 'GET');
 
       this.colorService
         .getEmotionAndColorByUserId(userId)
         .then((results) => {
           console.log(results);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ colors: results }));
         })
         .catch((error) => {
-          console.error("Error fetching color data:", error);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to fetch color data" }));
+          console.error('Error fetching color data:', error);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
         });
     });
   }
@@ -189,35 +185,35 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
       const userId = decoded.id;
 
-      let body = "";
-      req.on("data", (chunk) => {
+      let body = '';
+      req.on('data', (chunk) => {
         body += chunk.toString();
       });
 
-      req.on("end", () => {
+      req.on('end', () => {
         const { emotion } = JSON.parse(body);
         this.colorService
           .getColorByUserIdAndEmotion(userId, emotion)
           .then((results) => {
             this.apiService.incrementApiStats(
               userId,
-              "/color-by-emotion",
-              "POST"
+              '/color-by-emotion',
+              'POST'
             );
-            res.writeHead(200, { "Content-Type": "application/json" });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ color: results }));
           })
           .catch((error) => {
-            console.error("Error fetching color data:", error);
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Failed to fetch color data" }));
+            console.error('Error fetching color data:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to fetch color data' }));
           });
       });
     });
@@ -229,55 +225,54 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
-      let body = "";
-      req.on("data", (chunk) => {
+      let body = '';
+      req.on('data', (chunk) => {
         body += chunk.toString();
       });
 
-      req.on("end", () => {
-        console.log("body", body);
+      req.on('end', () => {
         const { userId, emotion, color } = JSON.parse(body);
         this.colorService
           .editColorByUserIdAndEmotion(userId, emotion, color)
           .then((results) => {
-            this.apiService.incrementApiStats(userId, "/edit-color", "PATCH");
-            res.writeHead(200, { "Content-Type": "application/json" });
+            this.apiService.incrementApiStats(userId, '/color/edit', 'PATCH');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(
-              JSON.stringify({ message: "Color data updated successfully" })
+              JSON.stringify({ message: 'Color data updated successfully' })
             );
           })
           .catch((err) => {
-            console.error("Error updating color:", err);
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Failed to edit color data" }));
+            console.error('Error updating color:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to edit color data' }));
           });
       });
     });
   }
 
   handleAddColorRoute(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", () => {
+    req.on('end', () => {
       const { userId, emotion, color } = JSON.parse(body);
       this.colorService
         .addColorByUserIdAndEmotion(userId, emotion, color)
         .then((results) => {
-          this.apiService.incrementApiStats(userId, "/add-color", "POST");
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Color data added successfully" }));
+          this.apiService.incrementApiStats(userId, '/color/add', 'POST');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Color data added successfully' }));
         })
         .catch((err) => {
-          console.error("Error adding color:", err.message);
-          res.writeHead(400, { "Content-Type": "application/json" });
+          console.error('Error adding color:', err.message);
+          res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: err.message }));
         });
     });
@@ -289,17 +284,17 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
-      let body = "";
-      req.on("data", (chunk) => {
+      let body = '';
+      req.on('data', (chunk) => {
         body += chunk.toString();
       });
 
-      req.on("end", () => {
+      req.on('end', () => {
         const { userId, emotion } = JSON.parse(body);
 
         this.colorService
@@ -307,30 +302,30 @@ class Server {
           .then((results) => {
             this.apiService.incrementApiStats(
               userId,
-              "/delete-color",
-              "DELETE"
+              '/color/delete',
+              'DELETE'
             );
-            res.writeHead(200, { "Content-Type": "application/json" });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(
-              JSON.stringify({ message: "Color data deleted successfully" })
+              JSON.stringify({ message: 'Color data deleted successfully' })
             );
           })
           .catch((err) => {
-            console.error("Error deleting color:", err.message);
-            res.writeHead(500, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Failed to delete color data" }));
+            console.error('Error deleting color:', err.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to delete color data' }));
           });
       });
     });
   }
 
   handleLogin(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", async () => {
+    req.on('end', async () => {
       try {
         const { email, password } = JSON.parse(body);
         const { token, userId, userRole } = await this.authService.loginUser(
@@ -339,15 +334,15 @@ class Server {
         );
 
         // Increment API stats after successful login
-        this.apiService.incrementApiStats(userId, "/login", "POST");
+        this.apiService.incrementApiStats(userId, '/login', 'POST');
 
         res.writeHead(200, {
-          "Content-Type": "application/json",
-          "Set-Cookie": `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
+          'Content-Type': 'application/json',
+          'Set-Cookie': `jwt=${token}; HttpOnly; Secure; Path=/; Max-Age=3600`,
         });
         res.end(JSON.stringify({ userId, email, userRole }));
       } catch (err) {
-        res.writeHead(401, { "Content-Type": "application/json" });
+        res.writeHead(401, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
     });
@@ -359,31 +354,31 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
       const userId = decoded.id;
 
       // Increment API stats for logout
-      this.apiService.incrementApiStats(userId, "/logout", "POST");
+      this.apiService.incrementApiStats(userId, '/logout', 'POST');
 
       res.writeHead(200, {
-        "Set-Cookie": "jwt=; HttpOnly; Secure; Path=/; Max-Age=0",
-        "Content-Type": "application/json",
+        'Set-Cookie': 'jwt=; HttpOnly; Secure; Path=/; Max-Age=0',
+        'Content-Type': 'application/json',
       });
-      res.end(JSON.stringify({ message: "Successfully logged out" }));
+      res.end(JSON.stringify({ message: 'Successfully logged out' }));
     });
   }
 
   handleRegister(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", () => {
+    req.on('end', () => {
       const { email, password, securityQuestion, answer } = JSON.parse(body);
       this.userService.registerUserWithSecurityQuestion(
         email,
@@ -392,22 +387,22 @@ class Server {
         answer.toLowerCase(),
         (err, result) => {
           if (err) {
-            res.writeHead(500, { "Content-Type": "application/json" });
+            res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(
               JSON.stringify({
-                error: "Registration failed. Please try again.",
+                error: 'Registration failed. Please try again.',
               })
             );
           } else {
             // Increment API stats for register
             this.apiService.incrementApiStats(
               result.insertId,
-              "/register",
-              "POST"
+              '/register',
+              'POST'
             );
 
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ message: "Registration successful!" }));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Registration successful!' }));
           }
         }
       );
@@ -416,31 +411,31 @@ class Server {
 
   handleGetApiCount(req, res) {
     const result = 1;
-    res.writeHead(200, { "Content-Type": "application/json" });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ result }));
   }
 
   handleGetSecurityQuestion(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", () => {
+    req.on('end', () => {
       const { email } = JSON.parse(body);
       this.userService.getSecurityQuestionByEmail(email, (err, question) => {
         if (err || !question) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Email is not found." }));
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Email is not found.' }));
         } else {
           // Increment API stats for get-security-question
           this.apiServiceapiService.incrementApiStats(
             null,
-            "/get-security-question",
-            "POST"
+            '/get-security-question',
+            'POST'
           );
 
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ question }));
         }
       });
@@ -452,27 +447,27 @@ class Server {
     const token = cookies.jwt;
 
     this.authService.verifyToken(token, (err, decoded) => {
-      if (err || decoded.userRole !== "admin") {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+      if (err || decoded.userRole !== 'admin') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
         return;
       }
 
       const userId = decoded.id;
 
       // Increment API stats for admin route
-      this.apiService.incrementApiStats(userId, "/admin/users", "GET");
+      this.apiService.incrementApiStats(userId, '/user/admin', 'GET');
 
       // Fetch both endpoint and user stats
       this.apiService.getApiStats((err, stats) => {
         if (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to fetch stats" }));
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
           return;
         }
 
         // Use stats from callback
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
           JSON.stringify({
             endpoints: stats.endpoints,
@@ -483,56 +478,98 @@ class Server {
     });
   }
 
+  handleProfileRoute(req, res) {
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err || decoded.userRole !== 'admin') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
+        return;
+      }
+
+      const userId = decoded.id;
+
+      this.userService.getUserById(userId, (err, user) => {
+        if (err || !user) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'User not found' }));
+          return;
+        }
+
+        this.apiService.incrementApiStats(userId, '/user/profile', 'GET');
+
+        // Fetch both endpoint and user stats
+        this.apiService.getApiStats((err, stats) => {
+          if (err) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to fetch stats' }));
+            return;
+          }
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              user,
+              users: stats.users,
+            })
+          );
+        });
+      });
+    });
+  }
+
   handleVerifySecurityAnswer(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", () => {
+    req.on('end', () => {
       const { email, answer } = JSON.parse(body);
       this.userService.getSecurityAnswerByEmail(email, (err, storedAnswer) => {
         if (err || !storedAnswer) {
-          res.writeHead(404, { "Content-Type": "application/json" });
+          res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(
-            JSON.stringify({ error: "User not found or answer not set." })
+            JSON.stringify({ error: 'User not found or answer not set.' })
           );
         } else if (storedAnswer.toLowerCase() !== answer.toLowerCase()) {
-          res.writeHead(401, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Please enter a correct answer." }));
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Please enter a correct answer.' }));
         } else {
           // Increment API stats for verify-security-answer
           this.apiService.incrementApiStats(
             null,
-            "/verify-security-answer",
-            "POST"
+            '/verify-security-answer',
+            'POST'
           );
 
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Answer verified successfully." }));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Answer verified successfully.' }));
         }
       });
     });
   }
 
   handleResetPassword(req, res) {
-    let body = "";
-    req.on("data", (chunk) => {
+    let body = '';
+    req.on('data', (chunk) => {
       body += chunk.toString();
     });
 
-    req.on("end", () => {
+    req.on('end', () => {
       const { email, newPassword } = JSON.parse(body);
       this.userService.resetPassword(email, newPassword, (err, success) => {
         if (err || !success) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Password reset failed." }));
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Password reset failed.' }));
         } else {
           // Increment API stats for reset-password
-          this.apiService.incrementApiStats(null, "/reset-password", "POST");
+          this.apiService.incrementApiStats(null, '/reset-password', 'POST');
 
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ message: "Password reset successful." }));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Password reset successful.' }));
         }
       });
     });
@@ -544,18 +581,18 @@ class Server {
 
     this.authService.verifyToken(token, (err, decoded) => {
       if (err) {
-        res.writeHead(403, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Unauthorized access" }));
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unauthorized access' }));
       } else {
         const userId = decoded.id;
 
         // Increment API stats for protected route
-        this.apiService.incrementApiStats(userId, "/protected", "GET");
+        this.apiService.incrementApiStats(userId, '/protected', 'GET');
 
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
           JSON.stringify({
-            message: "Access granted to protected route",
+            message: 'Access granted to protected route',
             user: decoded,
           })
         );
@@ -564,15 +601,15 @@ class Server {
   }
 
   serveSwagger(req, res, pathname) {
-    if (pathname === "/api-docs") {
+    if (pathname === '/api-docs') {
       // Serve the Swagger UI index.html
       fs.readFile(
-        path.join(swaggerUiPath, "index.html"),
-        "utf8",
+        path.join(swaggerUiPath, 'index.html'),
+        'utf8',
         (err, data) => {
           if (err) {
-            res.writeHead(500, { "Content-Type": "text/plain" });
-            res.end("Error loading Swagger UI");
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Error loading Swagger UI');
             return;
           }
           // Replace the default Swagger JSON URL with your actual Swagger JSON URL
@@ -580,36 +617,36 @@ class Server {
             'url: "https://petstore.swagger.io/v2/swagger.json"',
             `url: "/swagger.json"`
           );
-          res.writeHead(200, { "Content-Type": "text/html" });
+          res.writeHead(200, { 'Content-Type': 'text/html' });
           res.end(modifiedHtml);
         }
       );
-    } else if (pathname === "/swagger.json") {
+    } else if (pathname === '/swagger.json') {
       // Serve the Swagger JSON document
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(swaggerDocument));
     } else {
       // Serve static files (CSS, JS, etc.) for Swagger UI
       const filePath = path.join(
         swaggerUiPath,
-        pathname.replace("/api-docs", "")
+        pathname.replace('/api-docs', '')
       );
       fs.readFile(filePath, (err, fileContent) => {
         if (err) {
           res.writeHead(404);
-          res.end("File not found");
+          res.end('File not found');
           return;
         }
         const ext = path.extname(filePath);
         const contentType =
-          ext === ".css"
-            ? "text/css"
-            : ext === ".js"
-            ? "application/javascript"
-            : ext === ".html"
-            ? "text/html"
-            : "text/plain";
-        res.writeHead(200, { "Content-Type": contentType });
+          ext === '.css'
+            ? 'text/css'
+            : ext === '.js'
+            ? 'application/javascript'
+            : ext === '.html'
+            ? 'text/html'
+            : 'text/plain';
+        res.writeHead(200, { 'Content-Type': contentType });
         res.end(fileContent);
       });
     }
@@ -632,8 +669,8 @@ db.initializeTables();
 const seed = new SeedData(db);
 seed.seedUser();
 seed.seedAdmin();
-seed.seedUserRole(1, "user");
-seed.seedUserRole(2, "admin");
+seed.seedUserRole(1, 'user');
+seed.seedUserRole(2, 'admin');
 
 const userService = new UserService(db);
 const authService = new AuthService(userService);
@@ -649,14 +686,14 @@ const server = new Server(
 
 server.start();
 
-const app = express();
-const PORT = process.env.PORT || 8080;
+// const app = express();
+// const PORT = process.env.PORT || 8080;
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running at http://localhost:${PORT}`);
+//   console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+// });
 
 module.exports = Server;
