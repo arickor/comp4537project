@@ -8,6 +8,9 @@ require("dotenv").config();
 const http = require("http");
 const url = require("url");
 const Database = require("./database");
+const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("../docs/emotionalSwagger.json");
 
 const UserService = require("./userService");
 const AuthService = require("./authService");
