@@ -424,12 +424,6 @@ class Server {
     });
   }
 
-  handleGetApiCount(req, res) {
-    const result = 1;
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ result }));
-  }
-
   handleGetSecurityQuestion(req, res) {
     let body = '';
     req.on('data', (chunk) => {
@@ -498,7 +492,7 @@ class Server {
     const token = cookies.jwt;
 
     this.authService.verifyToken(token, (err, decoded) => {
-      if (err || decoded.userRole !== 'admin') {
+      if (err) {
         res.writeHead(403, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: messages.error.authorization }));
         return;
