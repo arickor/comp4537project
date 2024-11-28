@@ -32,7 +32,7 @@ const handleSwaggerRoutes = (req, res) => {
       window.onload = function() {
         // Swagger UI configuration
         const ui = SwaggerUIBundle({
-          url: "http://localhost:8080/swagger.json", // Point to your Swagger JSON
+          url: "https://arickor.com/comp4537/project/backend/v1/docs/emotionalSwagger.json", // Point to your Swagger JSON
           dom_id: '#swagger-ui',
           deepLinking: true,
           presets: [

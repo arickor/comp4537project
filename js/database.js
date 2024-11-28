@@ -11,7 +11,7 @@ class Database {
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
       ssl: {
-        rejectUnauthorized: false, // Reject unauthorized certificates
+        rejectUnauthorized: true, // Reject unauthorized certificates
       },
     });
     this.connect();
