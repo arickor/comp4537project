@@ -35,8 +35,8 @@ class Server {
     const server = http.createServer((req, res) => {
       res.setHeader(
         'Access-Control-Allow-Origin',
-        'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net'
-        // "http://localhost:3000"
+        // 'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net'
+        "http://localhost:3000"
       );
       res.setHeader(
         'Access-Control-Allow-Methods',
@@ -51,8 +51,8 @@ class Server {
       if (req.method === 'OPTIONS') {
         res.writeHead(204, {
           'Access-Control-Allow-Origin':
-            'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net',
-          // 'http://localhost:3000',
+            // 'https://4537project-s2p-2-hackc2gjbxgzhpcn.canadacentral-01.azurewebsites.net',
+          'http://localhost:3000',
           'Access-Control-Allow-Methods':
             'GET, POST, PUT, PATCH, DELETE, OPTIONS',
           'Access-Control-Allow-Headers':
@@ -77,7 +77,10 @@ class Server {
 
       if (method === 'POST' && parsedUrl.pathname.endsWith('/login')) {
         this.handleLogin(req, res);
-      } else if (method === 'POST' && parsedUrl.pathname.endsWith('/logout')) {
+      }  else if (method === 'GET' && parsedUrl.pathname === '/validate-token') {
+        this.handleTokenValidation(req, res);
+      }
+      else if (method === 'POST' && parsedUrl.pathname.endsWith('/logout')) {
         this.logoutUser(req, res);
       } else if (
         method === 'POST' &&
@@ -144,6 +147,26 @@ class Server {
 
     server.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
+    });
+  }
+
+  handleTokenValidation(req, res) {
+    const cookies = Utils.parseCookies(req);
+    const token = cookies.jwt;
+
+    this.authService.verifyToken(token, (err, decoded) => {
+      if (err) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: messages.error.authorization }));
+      } else {
+        const userId = decoded.id;
+
+        // Increment API stats for token validation
+        this.apiService.incrementApiStats(userId, '/', 'GET');
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: messages.success.tokenValidation }));
+      }
     });
   }
 
